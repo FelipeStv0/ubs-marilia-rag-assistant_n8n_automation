@@ -1,5 +1,14 @@
 # Histórico de alterações
 
+## Correção de relevância e auditoria dos relatórios reais — 2026-11-08
+
+- Recebidos e auditados JSON e Markdown da execução local, com timestamps, respostas e URLs oficiais.
+- Diferenciados quatro PASSOU técnicos de três cenários semanticamente adequados e uma resposta irrelevante (endereço respondeu horário).
+- Introduzida abstenção para perguntas de endereço sem evidência de logradouro próxima à unidade.
+- Fortalecido o smoke test com verificação mínima de relevância e novos testes de regressão.
+- Publicado resumo auditável com resultados e limites, sem expor segredos ou dados de pacientes.
+- Pendente reexecutar o teste ponta a ponta após atualizar a instalação local.
+
 ## Registro de execução local e publicação segura — 2026-11-08
 
 - Documentado o resultado observado de 6 fontes processadas (1 atualizada, 5 inalteradas, 0 falhas, 92 trechos reportados).
