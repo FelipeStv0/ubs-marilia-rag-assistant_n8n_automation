@@ -91,28 +91,51 @@ def split_chunks(text: str, category: str, size=1200, overlap=150) -> list[str]:
     return output
 
 
-def _safe_get(url):
+def _safe_get(url: str) -> str:
+    """Acessa apenas domínios aprovados; restringe redirecionamentos e tamanho."""
     sess = requests.Session()
-    sess.headers.update({"User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml"})
+    sess.headers.update({
+        "User-Agent": USER_AGENT,
+        "Accept": "text/html,application/xhtml+xml",
+    })
     current = url
-    for _ in range(4):
-        parsed = urlsplit(current)
-        if parsed.scheme != "https" or parsed.hostname not in ALLOWED_HOSTS or parsed.username or parsed.password:
-            raise ValueError("Redirecionamento para endereco nao permitido")
-        response = sess.get(current, timeout=(8, 30), allow_redirects=False)
-        if response.status_code in (301, 302, 303, 307, 308):
-            redirect = response.headers.get("Location")
-            if not redirect:
-                raise ValueError("Redirecionamento sem URL")
-            current = urljoin(current, redirect)
-            continue
-        response.raise_for_status()
-        if "html" not in response.headers.get("Content-Type", "").lower():
-            raise ValueError("Conteudo retornado nao e HTML")
-        if len(response.content) > 4_000_000:
-            raise ValueError("Pagina excedeu limite de 4 MB")
-        return response.text
-    raise ValueError("Excesso de redirecionamentos")
+    max_bytes = 4_000_000
+    try:
+        for _ in range(4):
+            parsed = urlsplit(current)
+            if (parsed.scheme != "https" or parsed.hostname not in ALLOWED_HOSTS
+                    or parsed.username or parsed.password or parsed.port not in (None, 443)):
+                raise ValueError("Redirecionamento para endereco nao permitido")
+            with sess.get(current, timeout=(8, 30), allow_redirects=False, stream=True) as response:
+                if response.status_code in (301, 302, 303, 307, 308):
+                    redirect = response.headers.get("Location")
+                    if not redirect:
+                        raise ValueError("Redirecionamento sem URL")
+                    current = urljoin(current, redirect)
+                    continue
+                response.raise_for_status()
+                if "html" not in response.headers.get("Content-Type", "").lower():
+                    raise ValueError("Conteudo retornado nao e HTML")
+                length = response.headers.get("Content-Length")
+                if length and length.isdigit() and int(length) > max_bytes:
+                    raise ValueError("Pagina excedeu limite de 4 MB")
+                pieces = []
+                total = 0
+                for part in response.iter_content(chunk_size=65536):
+                    if not part:
+                        continue
+                    total += len(part)
+                    if total > max_bytes:
+                        raise ValueError("Pagina excedeu limite de 4 MB")
+                    pieces.append(part)
+                raw = b"".join(pieces)
+                if not raw:
+                    raise ValueError("Pagina vazia")
+                encoding = response.encoding or response.apparent_encoding or "utf-8"
+                return raw.decode(encoding, errors="replace")
+        raise ValueError("Excesso de redirecionamentos")
+    finally:
+        sess.close()
 
 
 def ingest_all():
