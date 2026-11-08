@@ -137,6 +137,26 @@ docker compose config
 
 O GitHub Actions executa testes e valida JSONs em novas alterações. A integração completa (coleta real, execução no n8n e consulta de banco em contêineres) deve ser validada no ambiente de execução; testes unitários não substituem esse procedimento.
 
+## Demonstração auditável e testes de integração
+
+**Modo atual: extrativo/lexical; nenhuma LLM ativa e nenhuma chamada a API paga de IA.**
+
+O repositório inclui um roteiro de [demonstração reproduzível](docs/DEMONSTRACAO.md) que distingue testes unitários, contratos estáticos, integração com banco real e execução ponta a ponta. Os testes automatizados não devem ser descritos como confirmação de que o n8n foi executado com as fontes oficiais.
+
+O CI agora possui dois jobs: **unit-and-contract** e **fastapi-postgres-integration** (PostgreSQL/pgvector real e respostas HTTP FastAPI em processo). Ambos produzem relatórios JUnit XML anexados aos workflows; isso ainda não valida os serviços externos, o Nginx ou a execução do n8n.
+
+Para registrar **perguntas reais, respostas recebidas, fontes, horários de coleta, falhas controladas e resultado por caso** em sua instalação local, publique os workflows, realize a primeira coleta e execute:
+
+    python scripts/validar_execucao.py
+
+Opcionalmente, para coletar via backend antes de testar:
+
+    python scripts/validar_execucao.py --coletar
+
+O comando gera relatórios JSON e Markdown em **artifacts/**, ignorados pelo Git. Um cenário sem evidência ou um endpoint indisponível ficará marcado **FALHOU**; o programa não fabrica respostas nem transforma falhas em sucesso. A coleta opcional usa diretamente o backend Docker e **não** comprova a execução do workflow 01 do n8n.
+
+Se uma fonte falhar ao atualizar, a API passa a expor seu estado e a interface avisa que um trecho anteriormente indexado pode estar desatualizado. A resposta continua exigindo conferência na página oficial.
+
 ## Fontes, atualização e governança
 
 As URLs iniciais estão em [`sources.json`](sources.json) e abrangem páginas da Prefeitura de Marília, Secretaria Municipal da Saúde e Ministério da Saúde. Adicionar uma fonte exige revisar sua legitimidade, escopo, disponibilidade e políticas de acesso. Os domínios permitidos são validados no backend; redirecionamentos para outros domínios são rejeitados.
