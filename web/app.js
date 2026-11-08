@@ -14,11 +14,11 @@ function append(tag, className, parent, content) {
 
 function addMessage(role, message, sources = []) {
   const wrap = append('article', `chat-message ${role}`, messages);
-  append('div', 'label', wrap, role === 'user' ? 'VOCÊ' : 'ASSISTENTE · FONTES OFICIAIS');
+  append('div', 'label', wrap, role === 'user' ? 'VOCÊ' : 'ASSISTENTE · TRECHOS INDEXADOS');
   append('div', 'bubble', wrap, message);
   if (role === 'bot' && sources.length) {
     const group = append('section', 'sources', wrap);
-    append('div', 'label', group, 'FONTES CONSULTADAS');
+    append('div', 'label', group, 'FONTES INDEXADAS');
     for (const src of sources) {
       let parsed;
       try { parsed = new URL(src.url); } catch { continue; }
@@ -30,6 +30,7 @@ function addMessage(role, message, sources = []) {
       append('b', '', card, src.title || 'Fonte oficial');
       if (src.excerpt) append('small', '', card, src.excerpt.slice(0, 280) + (src.excerpt.length > 280 ? '…' : ''));
       if (src.checked_at) append('small', '', card, 'Verificado em: ' + new Date(src.checked_at).toLocaleString('pt-BR'));
+      if (src.source_status === 'error') append('small', 'source-warning', card, 'Atenção: a última atualização falhou. O trecho pode estar desatualizado; confira a página oficial.');
     }
   }
   messages.scrollTop = messages.scrollHeight;
