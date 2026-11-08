@@ -64,6 +64,16 @@ docker compose config
 
 A automação GitHub Actions cobre testes unitários e estrutura. A validação integrada do n8n, Nginx, banco e coleta exige executar o Compose localmente.
 
+## Demonstrar a execução completa
+
+Para registrar um relatório reproduzível de consultas reais (HTTP através de Nginx, webhook n8n 02, API e PostgreSQL), confira [Demonstração e evidências](DEMONSTRACAO.md) e execute a partir da raiz:
+
+    python scripts/validar_execucao.py
+
+Após publicar os workflows e executar a ingestão, os resultados aparecerão em artifacts/execucao-real.json e artifacts/execucao-real.md. Esses arquivos não são incluídos no Git, e qualquer cenário reprovado permanece identificado como FALHOU.
+
+A execução manual do workflow n8n 01 deve ser confirmada separadamente nas execuções do próprio n8n. Testes de FastAPI + PostgreSQL no CI não comprovam o agendamento n8n ou a coleta de páginas públicas.
+
 ## Privacidade e limites
 
 Não inserir nomes, documentos, cartões SUS, diagnósticos ou dados clínicos no chat. O protótipo não é destinado a atender cidadãos pela internet sem revisão de segurança e governança. O horário da última verificação não demonstra que uma unidade esteja aberta neste momento; dados críticos devem ser confirmados diretamente na fonte oficial.
