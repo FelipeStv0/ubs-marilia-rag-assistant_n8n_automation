@@ -99,10 +99,10 @@ def test_ingestion_failure_retains_prior_passage_and_flags_stale_data():
             (SOURCE["id"],),
         ).fetchone()
         count = conn.execute(
-            "SELECT COUNT(*) FROM ubs.passages WHERE source_id=%s AND active",
+            "SELECT COUNT(*) AS total FROM ubs.passages WHERE source_id=%s AND active",
             (SOURCE["id"],),
-        ).fetchone()[0]
-    assert status[0] == "error" and status[1] is not None and count == 1
+        ).fetchone()["total"]
+    assert status["status"] == "error" and status["last_success_at"] is not None and count == 1
     with TestClient(app) as client:
         answer = client.post("/internal/answer", json={
             "question": "Onde fica a UBS Laboratorio Testes?"
