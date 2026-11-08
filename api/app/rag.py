@@ -121,24 +121,20 @@ def _retrieve(question: str, vector: list[float] | None):
 
 # A busca lexical pode encontrar a unidade sem o dado solicitado (ex.: horário
 # em vez de endereço). Não declarar suficiência se faltar evidência de localização.
-ADDRESS_LINE = re.compile(r"\\b(?:rua|avenida|av\\.?|travessa|alameda|praca|rodovia|estrada)\\b", re.I)
+ADDRESS_LINE = re.compile(r"\b(?:rua|avenida|av\.?|travessa|alameda|praca|rodovia|estrada)\b", re.I)
 
 
 def location_requested(question: str) -> bool:
     text = normalize(question)
-    return bool(re.search(r"\\b(?:endereco|localizacao|onde\\s+fica|qual\\s+(?:a\\s+)?rua)\\b", text))
+    return bool(re.search(r"\b(?:endereco|localizacao|onde\s+fica|qual\s+(?:a\s+)?rua)\b", text))
 
 
 def location_supported(question: str, passage: dict) -> bool:
-    """Heurística conservadora para perguntas explícitas de endereço.
-
-    Não valida endereços no mundo real; só evita devolver uma passagem
-    sem logradouro como resposta suficiente a uma pergunta de endereço.
-    """
+    """Conservative check: a location question needs an address near the unit name."""
     text = normalize(passage.get("body", ""))
     unit = unit_name(question)
     if unit:
-        unit_pattern = re.compile(r"\\b" + r"\\s+".join(re.escape(x) for x in unit.split()) + r"\\b")
+        unit_pattern = re.compile(r"\b" + r"\s+".join(re.escape(x) for x in unit.split()) + r"\b")
         for match in unit_pattern.finditer(text):
             window = text[max(0, match.start() - 80):match.end() + 280]
             if ADDRESS_LINE.search(window):
