@@ -1,134 +1,163 @@
-# Assistente de UBS e USF — Marília/SP (n8n + RAG)
+# Assistente de Atendimento — UBS e USF de Marília/SP
 
-Projeto completo para execução local com Docker Compose. Atualiza uma base de conhecimento exclusivamente com páginas oficiais autorizadas e atende perguntas com recuperação de trechos e, opcionalmente, geração de respostas por IA.
+![CI](https://github.com/FelipeStv0/ubs-marilia-rag-assistant_n8n_automation/actions/workflows/ci.yml/badge.svg)
 
-> **Protótipo acadêmico independente.** Não é um serviço oficial da Prefeitura. Não realiza diagnóstico, triagem clínica ou agendamento. Não solicite dados pessoais de saúde. Antes de publicar na internet, implemente HTTPS, autenticação/observabilidade adequada, revisão de segurança e validação institucional.
+Plataforma experimental de consulta a **informações administrativas** sobre Unidades Básicas de Saúde (UBS) e Unidades de Saúde da Família (USF) de Marília, SP. Automatiza a coleta programada de páginas oficiais, registra revisões e oferece consultas com referências verificáveis.
 
-## Componentes
+> **Status: fase de testes — sem integração a API externa paga.** Atualmente o sistema opera no **modo extrativo com busca lexical**: localiza trechos provenientes das fontes oficiais cadastradas e os exibe sem sintetizá-los com um modelo de linguagem. A API interna em Python permanece ativa; “sem API” aqui significa **sem chave de serviço de IA generativa**, não ausência do backend. O suporte opcional a embeddings e geração de respostas está implementado, mas não é requisito para executar o ambiente.
 
-| Componente | Endereço local | Uso |
-|---|---|---|
-| n8n | http://localhost:5678 | Editor e execução dos workflows |
-| Chat web | http://localhost:8080 | Interface do cidadão |
-| API FastAPI | rede Docker interna | Coleta, banco, recuperação e geração |
-| PostgreSQL + pgvector | rede Docker interna | Fontes, versões, trechos e embeddings |
+> **Aviso institucional:** projeto independente, não vinculado à Prefeitura Municipal de Marília nem à Secretaria Municipal da Saúde. Não oferece diagnóstico, triagem, agendamento, disponibilidade de vacinas em tempo real ou aconselhamento médico. Confirme horários, documentos e campanhas diretamente com a unidade quando a informação for crítica.
 
-## Instalação no Windows (Docker Desktop)
+## Funcionalidades
 
-1. Instale e inicie **Docker Desktop** (com WSL2) e **Python 3**.
-2. Extraia o ZIP. Abra PowerShell na pasta `assistente_ubs_marilia_n8n`.
-3. Execute `python scripts/gerar_env.py`. Isso gera senhas aleatórias e o arquivo `.env`.
-4. Abra `.env` no Bloco de Notas. Preencha `OPENAI_API_KEY=...` com sua chave **se quiser respostas generativas e busca vetorial**. A chave não está incluída neste projeto e pode gerar custos na API. Sem a chave, a busca lexical funciona e mostra o trecho oficial encontrado, mas não gera uma resposta por LLM.
-5. Execute `docker compose up -d --build`.
-6. Abra **http://localhost:5678** e crie a conta proprietária local do n8n.
-7. Execute `python scripts/instalar_workflows.py`. O script importa os dois JSON, tenta publicá-los e faz a coleta inicial.
-8. Abra **http://localhost:8080** e envie uma pergunta.
+- Coleta automática de URLs **explicitamente aprovadas** em `sources.json`, agendada no n8n a cada seis horas (intervalo configurável).
+- Download de HTML oficial, limpeza do texto, segmentação em trechos e detecção de alterações por hash SHA-256.
+- Histórico de versões no PostgreSQL: revisões antigas permanecem registradas, enquanto somente a versão ativa é pesquisável.
+- Consulta por texto completo em português, similaridade lexical e correspondência mais restritiva quando a pergunta identifica uma UBS/USF.
+- Exibição do **trecho original**, link de origem e data da última coleta bem-sucedida, sem inventar respostas no modo de testes.
+- Modo RAG opcional, mediante configuração consciente da chave de um provedor externo.
+- Interface responsiva, proxy reverso e limitação de requisições; n8n disponível apenas em `localhost`.
+- Testes automatizados e validação contínua no GitHub Actions.
 
-Alternativamente, execute `powershell -ExecutionPolicy Bypass -File scripts/iniciar_windows.ps1` a partir da pasta do projeto. O script guia a etapa de criação da conta no n8n.
+## Stack técnica
 
-### Instalação manual (se o script de publicação falhar)
+| Camada | Tecnologia | Responsabilidade |
+| --- | --- | --- |
+| Orquestração | **n8n 2.x** | Schedule Trigger, Webhook, chamadas HTTP e publicação de workflows |
+| Backend | **Python 3, FastAPI, Pydantic** | API interna, regras de aplicação e validação |
+| Coleta | **Requests + Beautiful Soup** | Recuperação e extração de documentos HTML |
+| Persistência | **PostgreSQL 16** | Fontes, trechos, metadados, histórico e busca textual |
+| Busca vetorial opcional | **pgvector** | Armazenamento e busca de embeddings quando habilitados |
+| Frontend | **HTML, CSS e JavaScript** | Interface acessível por navegador |
+| Servidor web | **Nginx** | Arquivos estáticos, proxy, cabeçalhos de segurança e rate limiting |
+| Infraestrutura | **Docker Compose** | Inicialização e integração entre serviços |
+| Qualidade | **pytest + GitHub Actions** | Testes, sintaxe e validação dos workflows |
 
-No n8n, use **Import from File** para importar individualmente:
-- `workflows/01-atualizacao-fontes.json`
-- `workflows/02-perguntas-rag.json`
+## Arquitetura
 
-Abra cada workflow e clique **Publish**. Depois, no terminal, execute:
-
-```powershell
-docker compose exec -T api python -m app.bootstrap
+```mermaid
+flowchart TD
+    S[Fontes oficiais aprovadas] --> C[Workflow 01: agendamento / coleta]
+    C --> A[API FastAPI: extracao e versionamento]
+    A <--> D[(PostgreSQL + pgvector)]
+    U[Usuario] --> W[Frontend web / Nginx]
+    W --> Q[Workflow 02: webhook de atendimento]
+    Q --> R[API FastAPI: recuperacao e resposta]
+    R <--> D
+    R --> Q
+    Q --> W
 ```
 
-Os webhooks de produção só são registrados após publicar. A versão n8n 2.x utiliza o modelo de **publicação** em vez do antigo toggle de ativação.
+**Dois processos independentes:** o primeiro verifica e atualiza a base; o segundo recebe perguntas e recupera trechos já indexados. A conversa não acessa páginas arbitrárias da internet. Nenhuma URL enviada pelo usuário é consultada durante o atendimento.
 
-## O que foi implementado
+Veja [Arquitetura e decisões técnicas](docs/ARQUITETURA.md) e [Operação e resolução de problemas](docs/OPERACAO.md).
 
-**Workflow 01 — Atualização**
-- `Schedule Trigger` executa a cada **6 horas** (editável no node).
-- `Manual Trigger` permite executar imediatamente no editor.
-- `HTTP Request` aciona a API interna `POST /internal/reindex`.
-- A API visita as URLs listadas em `sources.json`, remove elementos HTML de navegação, extrai o texto e cria trechos.
-- Compara SHA-256 do conteúdo normalizado com o hash anterior. Não reprocesa páginas idênticas desnecessariamente.
-- Para conteúdo alterado, versiona os trechos, gera embeddings (se houver chave válida) e registra a revisão no banco; preserva versões anteriores para auditoria.
-- Falhas de uma fonte não apagam os trechos anteriores; são registradas nas tabelas `ubs.sources` e `ubs.ingestion_runs`.
+## Instalação (Windows 11)
 
-**Workflow 02 — Chat**
-- Webhook `POST /webhook/ubs-marilia` recebe `{ "question": "..." }`.
-- `HTTP Request` aciona a API interna `/internal/answer`.
-- A API faz busca lexical com PostgreSQL FTS + trigramas e, com chave OpenAI, também busca vetorial usando pgvector.
-- A IA recebe os trechos e produz JSON com `answer`, `used_source_ids` e `sufficient`. Somente IDs realmente recuperados são aceitos na resposta.
-- Sem evidência suficiente, retorna uma mensagem de abstenção. O chat mostra links, trechos e datas de verificação.
+**Requisitos:** Docker Desktop com WSL 2 e Python 3.11+ no PATH. Git é recomendado para versionamento, mas não é necessário para executar os contêineres.
 
-**Interface**
-- Frontend estático responsivo em HTML/CSS/JS, servido por Nginx.
-- Nginx usa proxy para o webhook do n8n, evitando problemas de CORS, e limita requisições de chat.
-- Exibe referências oficiais clicáveis e o estado da indexação.
+1. Clone ou extraia o projeto e abra o PowerShell na pasta que contém `docker-compose.yml`.
+2. Crie a configuração local:
+   ```powershell
+   python scripts/gerar_env.py
+   ```
+3. Mantenha `OPENAI_API_KEY=` **vazio** no `.env` durante a fase de testes. O script gera senhas locais para PostgreSQL e para a criptografia do n8n. **Nunca publique o `.env`.**
+4. Inicie os contêineres:
+   ```powershell
+   docker compose up -d --build
+   docker compose ps
+   ```
+5. Acesse [n8n local](http://localhost:5678) e configure a conta proprietária.
+6. Importe os arquivos `workflows/01-atualizacao-fontes.json` e `workflows/02-perguntas-rag.json`, pelo menu **Import from File** do editor, e publique os dois workflows. Como alternativa, execute `python scripts/instalar_workflows.py` após criar a conta proprietária.
+7. Faça a primeira coleta: no workflow 01, execute manualmente, ou rode:
+   ```powershell
+   docker compose exec -T api python -m app.bootstrap
+   ```
+8. Abra o chat em [http://localhost:8080](http://localhost:8080).
 
-## Fontes e diferenças nos horários
-
-As seis fontes iniciais de `sources.json` incluem o catálogo municipal de unidades, a notícia municipal sobre horário ampliado, a campanha municipal de multivacinação, páginas do Ministério da Saúde e a orientação municipal sobre urgências. Só URLs da lista são coletadas. **Nenhuma busca geral na web é feita em tempo de atendimento.**
-
-O catálogo geral da Prefeitura apresenta alguns horários antigos, enquanto a publicação de setembro de 2026 informa ampliação para unidades específicas. O prompt instrui a IA a conferir datas e explicitar incertezas quando necessário. Essa é uma **mitigação**, não uma garantia de detecção automática de toda divergência. Recomenda-se revisão humana de horários conflitantes antes de uso público.
-
-Para incluir outra página oficial, edite `sources.json` e execute a coleta. O sistema limita os domínios permitidos a `www.marilia.sp.gov.br`, `saude.marilia.sp.gov.br` e `www.gov.br`; alterações dessa lista exigem alteração deliberada em `api/app/config.py`.
-
-## Testar a API por meio do webhook
-
+Alternativa guiada para Windows:
 ```powershell
-curl.exe -X POST http://localhost:5678/webhook/ubs-marilia -H "Content-Type: application/json" -d '{"question":"Qual é o horário da UBS Nova Marília?"}'
+powershell -ExecutionPolicy Bypass -File .\scripts\iniciar_windows.ps1
 ```
 
-Se ocorrer erro por causa das aspas do PowerShell, use o chat web em `http://localhost:8080` para o teste inicial.
+**Atenção:** se já possui uma instalação funcionando, não apague os volumes Docker nem altere `N8N_ENCRYPTION_KEY`; a chave é necessária para descriptografar credenciais salvas no n8n. Antes de substituir os arquivos, faça backup do `.env` em local seguro e de seus volumes. Veja [Atualização segura](docs/OPERACAO.md).
 
-Para reiniciar coleta manual:
+## Execução sem serviço pago de IA
 
-```powershell
-docker compose exec -T api python -m app.bootstrap
-```
+O modo atual não chama nenhuma API paga de LLM ou embeddings. A busca utiliza PostgreSQL Full Text Search e similaridade de palavras. Os trechos recuperados são apresentados **sem interpretação clínica ou reescrita gerativa**.
 
-Para inspecionar logs:
+Limitações explícitas:
+- um resultado lexicalmente parecido **não comprova** que o documento está atualizado;
+- conteúdo extraído pode conter campos adjacentes e exigir leitura do contexto;
+- fontes oficiais podem divergir (por exemplo, notícia recente versus cadastro geral);
+- ausência de resultado não significa ausência do serviço no município;
+- o horário de coleta é diferente da data de publicação e da data de vigência.
 
-```powershell
-docker compose logs -f api n8n
-docker compose ps
-```
+O suporte a LLM é opcional e deve ser habilitado somente com aprovação do projeto, previsão de custos e revisão de privacidade. Não envie dados pessoais ou clínicos a serviços externos.
 
-Para ver o status do índice, visite `http://localhost:8080/api/status`.
+## Endereços locais
 
-## Organização dos arquivos
+| Serviço | Endereço |
+| --- | --- |
+| Interface de consultas | http://localhost:8080 |
+| Editor n8n | http://localhost:5678 |
+| Banco e API | Acessíveis somente na rede interna do Docker |
+
+A documentação automática do FastAPI não é exposta publicamente. O backend oferece `GET /health`, `GET /internal/status`, `POST /internal/reindex` e `POST /internal/answer` **na rede privada**. A interface utiliza o webhook do n8n e o proxy do Nginx.
+
+## Estrutura de pastas
 
 ```text
-assistente_ubs_marilia_n8n/
-├── docker-compose.yml
-├── .env.example
-├── sources.json
-├── db/init.sql
-├── workflows/
-│   ├── 01-atualizacao-fontes.json
-│   └── 02-perguntas-rag.json
+.
+├── .github/workflows/ci.yml       # Testes automáticos
 ├── api/
+│   ├── app/                       # API, coletor, busca e integrações opcionais
 │   ├── Dockerfile
-│   ├── requirements.txt
-│   └── app/{main,collector,rag,llm,config,db,bootstrap}.py
-├── nginx/default.conf
-├── web/{index.html,styles.css,app.js}
-├── scripts/{gerar_env,instalar_workflows}.py
-└── tests/test_collector.py
+│   └── requirements*.txt
+├── db/init.sql                     # Esquema, índices e extensões
+├── docs/                           # Arquitetura e operação
+├── nginx/default.conf              # Proxy e limitações HTTP
+├── scripts/                        # Inicialização e importação
+├── tests/                          # Testes automatizados
+├── web/                            # Interface web
+├── workflows/                      # Arquivos JSON importáveis pelo n8n
+├── sources.json                    # Fontes autorizadas
+├── .env.example                    # Exemplo SEM credenciais
+└── docker-compose.yml
 ```
 
-## Restrições e próximos cuidados
+## Qualidade e testes
 
-- Precisa de Docker Desktop. Não há credencial de API OpenAI embutida; usá-la pode gerar custos. Modo sem chave é limitado à recuperação textual.
-- As fontes são **HTML**. PDFs, páginas carregadas exclusivamente por JavaScript, conteúdo protegido por CAPTCHA e varredura automática de links não estão implementados.
-- Alguns sites podem bloquear requisições ou mudar o HTML. A plataforma registra a falha e mantém o último conteúdo, mas dados antigos não são considerados validação de disponibilidade atual.
-- A coleta usa uma lista fixa; novas notícias **não entram automaticamente** sem inclusão da respectiva URL. A atualização periódica detecta mudanças **nas URLs monitoradas**, não descobre todas as novas páginas. Para descoberta automática de comunicados seria necessária uma etapa adicional de feed/sitemap com aprovação de fontes.
-- O modelo de IA recebe texto de fonte externa como dados. O prompt restringe instruções maliciosas, mas é necessária validação operacional adicional contra prompt injection.
-- Evite hospedar este ambiente local diretamente na Internet. No Compose, chat e n8n aceitam conexões apenas de `127.0.0.1` do computador hospedeiro.
-- Nenhuma execução Docker ponta a ponta foi realizada no ambiente usado para empacotar o projeto: sintaxe e testes locais podem ser verificados, mas a integração real precisa ser validada após iniciar o Docker.
+```powershell
+python -m pip install -r api/requirements-dev.txt
+python -m pytest -q tests/
+python -m compileall -q api/app scripts
+docker compose config
+```
 
-## Referências
+O GitHub Actions executa testes e valida JSONs em novas alterações. A integração completa (coleta real, execução no n8n e consulta de banco em contêineres) deve ser validada no ambiente de execução; testes unitários não substituem esse procedimento.
 
-- https://docs.n8n.io/
-- https://github.com/n8n-io/n8n-docs/blob/main/docs/deploy/host-n8n/configure-n8n/use-the-command-line.md
-- https://www.marilia.sp.gov.br/portal/secretarias-paginas/16/unidades-de-saude---marilia-e-regiao/
-- https://saude.marilia.sp.gov.br/video/programa-mais-saude-mais-horario/17
-- https://www.gov.br/saude/pt-br/vacinacao/calendario
+## Fontes, atualização e governança
+
+As URLs iniciais estão em [`sources.json`](sources.json) e abrangem páginas da Prefeitura de Marília, Secretaria Municipal da Saúde e Ministério da Saúde. Adicionar uma fonte exige revisar sua legitimidade, escopo, disponibilidade e políticas de acesso. Os domínios permitidos são validados no backend; redirecionamentos para outros domínios são rejeitados.
+
+O sistema evita descartar o conteúdo previamente indexado quando uma coleta falha, porém **não garante a atualidade do dado**: consulte os registros de coleta e valide informações conflitantes antes de divulgação institucional.
+
+## Segurança, privacidade e escopo
+
+- Dados de saúde e informações de identificação de pacientes **não devem ser enviados** ao chat.
+- O sistema não autentica cidadãos nem está preparado para exposição pública na internet.
+- O n8n e o chat escutam apenas `127.0.0.1` no ambiente Docker Compose fornecido.
+- Nunca versionar `.env`, tokens, credenciais, bancos exportados, dumps ou dados reais de pacientes.
+- Para produção: HTTPS, controle de acesso, monitoramento, política de retenção e auditoria, revisão institucional e avaliação de LGPD e acessibilidade.
+
+## Evolução planejada
+
+- Validadores de atualidade por categoria e reconciliação estruturada de horários.
+- Painel de qualidade de fontes e alertas por coleta malsucedida.
+- Avaliação de recuperação com conjunto de perguntas rotuladas e métricas de precisão/abstenção.
+- Integração opcional de LLM, após aprovação de custos e privacidade.
+
+---
+
+**Natureza do projeto:** protótipo técnico em fase de testes. Nenhum conteúdo deve ser interpretado como orientação médica ou comunicação oficial do município.
