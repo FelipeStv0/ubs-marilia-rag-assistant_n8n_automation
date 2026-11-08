@@ -66,7 +66,7 @@ def _retrieve(question: str, vector: list[float] | None):
     with connect() as conn:
         with conn.cursor() as cur:
             cur.execute("""SELECT p.id,p.body,s.title,s.url,s.category,s.published_at,
-                   s.last_success_at,s.priority,
+                   s.last_success_at,s.priority,s.status,s.last_checked_at,
                    ts_rank(to_tsvector('portuguese', p.body), to_tsquery('portuguese', %s)) AS ft,
                    word_similarity(lower(%s),lower(p.body)) AS word_sim
                 FROM ubs.passages p JOIN ubs.sources s ON s.source_id=p.source_id
@@ -80,7 +80,7 @@ def _retrieve(question: str, vector: list[float] | None):
             if vector is not None:
                 encoded = json.dumps(vector)
                 cur.execute("""SELECT p.id,p.body,s.title,s.url,s.category,s.published_at,
-                    s.last_success_at,s.priority,
+                    s.last_success_at,s.priority,s.status,s.last_checked_at,
                     1 - (p.embedding <=> %s::vector) AS vec_sim
                     FROM ubs.passages p JOIN ubs.sources s ON s.source_id=p.source_id
                     WHERE p.active AND p.embedding IS NOT NULL
@@ -127,6 +127,8 @@ def _public_source(row):
         "excerpt": row["body"][:650],
         "published_at": str(row["published_at"]) if row["published_at"] else None,
         "checked_at": row["last_success_at"].isoformat() if row["last_success_at"] else None,
+        "source_status": row.get("status"),
+        "last_attempt_at": row["last_checked_at"].isoformat() if row.get("last_checked_at") else None,
     }
 
 
