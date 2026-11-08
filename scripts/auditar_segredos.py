@@ -106,10 +106,12 @@ def check_layout(root: Path) -> list[tuple[str, str]]:
     return findings
 
 
-def audit(root: Path, require_no_llm: bool = True) -> list[tuple[str, str]]:
+def audit(root: Path, require_no_llm: bool = True, skip_env: bool = False) -> list[tuple[str, str]]:
     findings = []
     path = root / ".env"
-    if not path.exists():
+    if skip_env:
+        findings.append(("INFO", "Auditoria CI: .env local nao lido"))
+    elif not path.exists():
         findings.append(("FAIL", ".env nao encontrado na pasta do projeto"))
     else:
         try:
@@ -128,8 +130,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Auditar segredos sem exibir valores")
     parser.add_argument("--permitir-llm", action="store_true",
                         help="Nao alertar se OPENAI_API_KEY estiver preenchida")
+    parser.add_argument("--ci", action="store_true",
+                        help="Pula leitura do .env, indisponivel no ambiente de CI")
     args = parser.parse_args()
-    results = audit(ROOT, require_no_llm=not args.permitir_llm)
+    results = audit(ROOT, require_no_llm=not args.permitir_llm, skip_env=args.ci)
     print("AUDITORIA LOCAL (SOMENTE LEITURA)")
     for level, description in results:
         print(level + ": " + description)
