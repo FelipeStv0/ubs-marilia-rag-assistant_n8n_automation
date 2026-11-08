@@ -9,3 +9,5 @@ __pycache__/
 data/
 *.sqlite
 *.db
+# Relatorios locais com respostas capturadas (nao publicar automaticamente)
+artifacts/
