@@ -1,5 +1,20 @@
 # Histórico de alterações
 
+## Melhoria de evidências e integração — 2026-11-08
+
+### Adicionado
+- Teste de integração FastAPI com PostgreSQL/pgvector real no CI (dados sintéticos, sem n8n).
+- Testes de contrato estático para endpoints e caminhos dos workflows n8n.
+- Relatórios JUnit XML anexados aos jobs do GitHub Actions.
+- Script de demonstração local com perguntas reais, respostas recebidas, referências, latências e falhas controladas.
+- Guia de demonstração com critérios de aceitação, limitações e instruções para obter evidências reais.
+- Metadados de status de coleta por fonte nas respostas e aviso visual quando a última tentativa falhou.
+
+### Limitações mantidas
+- LLM/embeddings não ativados no modo atual.
+- CI não valida publicação do n8n, sites públicos ou execução de ponta a ponta.
+- O script local precisa ser executado sobre a instalação efetiva para produzir resultados auditáveis.
+
 ## Versão de revisão técnica — 2026-11-08
 
 ### Atualizado
