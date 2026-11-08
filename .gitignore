@@ -11,3 +11,16 @@ data/
 *.db
 # Relatorios locais com respostas capturadas (nao publicar automaticamente)
 artifacts/
+
+# Segredos, chaves privadas e backups locais
+*.pem
+*.key
+*.p12
+*.pfx
+*.bak
+*.backup
+*.dump
+backup-privado/
+backups/
+n8n_data/
+.env-backup*
