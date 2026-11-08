@@ -77,6 +77,22 @@ Exemplo de formato esperado do endpoint (valores abaixo são **ilustrativos**, n
 
 Os campos efetivos devem ser obtidos nos arquivos da pasta artifacts. O programa nunca deve preencher a saída real com respostas simuladas.
 
+## Execução local documentada (08/11/2026)
+
+Foi apresentada evidência de execução do workflow 01, com 6 fontes, 1 atualizada, 5 inalteradas, 0 falhas e 92 trechos somados, além de um smoke test do workflow 02 com os quatro cenários aprovados e resultado agregado PASSOU.
+
+Veja [Evidências observadas da execução](EVIDENCIAS_EXECUCAO_2026-11-08.md) para os valores registrados e as limitações. Essa síntese é baseada em capturas e **não substitui** os arquivos `artifacts/execucao-real.json` e `artifacts/execucao-real.md` efetivamente produzidos no computador local. Não foi possível verificar o texto integral de respostas, seus links ou timestamps.
+
+### Gerar um resumo sanitizado
+
+Depois de executar o smoke test:
+
+```powershell
+python scripts/resumir_evidencias.py
+```
+
+Isso gera `artifacts/resumo-publicavel.md`, contendo somente cenários, códigos HTTP, modos e quantidades de fontes. O script verifica a estrutura do JSON, não valida a veracidade de informações extraídas. Revise manualmente antes de publicar. Os artefatos continuam excluídos do Git por padrão.
+
 ## Falhas controladas
 
 1. **Pergunta sem evidências:** a busca deve retornar no_evidence, sufficient=false e lista de fontes vazia, sem atribuir dados de outra UBS.
