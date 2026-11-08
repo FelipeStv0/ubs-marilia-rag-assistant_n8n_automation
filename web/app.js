@@ -30,6 +30,7 @@ function addMessage(role, message, sources = []) {
       append('b', '', card, src.title || 'Fonte oficial');
       if (src.excerpt) append('small', '', card, src.excerpt.slice(0, 280) + (src.excerpt.length > 280 ? '…' : ''));
       if (src.checked_at) append('small', '', card, 'Verificado em: ' + new Date(src.checked_at).toLocaleString('pt-BR'));
+      if (src.source_status === 'error') append('small', 'source-warning', card, 'Atenção: a última atualização falhou. O trecho pode estar desatualizado; confira a página oficial.');
     }
   }
   messages.scrollTop = messages.scrollHeight;
