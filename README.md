@@ -137,6 +137,23 @@ docker compose config
 
 O GitHub Actions executa testes e valida JSONs em novas alterações. A integração completa (coleta real, execução no n8n e consulta de banco em contêineres) deve ser validada no ambiente de execução; testes unitários não substituem esse procedimento.
 
+## Evidência observada da execução local (08/11/2026)
+
+Na demonstração local, foram observadas **6 fontes processadas**, com **1 atualizada, 5 inalteradas e 0 falhas**. O retorno do workflow 01 indicou **92 trechos somados entre as fontes**. O smoke test do workflow 02 registrou **4 cenários de consulta aprovados**, com modos `extractive`, `no_evidence` e `safety`, além do resultado agregado `PASSOU` para as verificações do script.
+
+Os números derivam de capturas de saída do n8n e do PowerShell. **Não publicamos os textos integrais das respostas ou URLs individuais recebidas**, pois os arquivos JSON e Markdown gerados na máquina local não foram incorporados a este repositório. Os testes não comprovam atualidade ou exatidão dos dados oficiais.
+
+- [Resultados observados, cenários, metodologia e limites](docs/EVIDENCIAS_EXECUCAO_2026-11-08.md)
+- [Procedimento para repetir e auditar a execução](docs/DEMONSTRACAO.md)
+
+Para gerar uma síntese sanitizada a partir de um relatório JSON **real** no computador local, sem copiar respostas completas:
+
+```powershell
+python scripts/resumir_evidencias.py
+```
+
+O arquivo `artifacts/resumo-publicavel.md` ficará ignorado pelo Git até revisão manual. **A operação permanece extrativa, sem LLM ativa e sem API paga de IA.**
+
 ## Demonstração auditável e testes de integração
 
 **Modo atual: extrativo/lexical; nenhuma LLM ativa e nenhuma chamada a API paga de IA.**
