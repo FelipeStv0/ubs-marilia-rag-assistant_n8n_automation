@@ -25,6 +25,8 @@ jobs:
           python -m json.tool sources.json >/dev/null
           python -m json.tool workflows/01-atualizacao-fontes.json >/dev/null
           python -m json.tool workflows/02-perguntas-rag.json >/dev/null
+      - name: Audit tracked credential paths without reading secrets
+        run: python scripts/auditar_segredos.py --ci
       - name: Verify no committed secrets
         run: |
           ! git ls-files | grep -E '(^|/)\.env$|\.pem$|\.key$|(^|/)n8n_data/'
