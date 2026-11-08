@@ -5,6 +5,8 @@ Exige Docker Compose local, workflow 02 publicado e fontes previamente indexadas
 """
 import argparse
 import json
+import re
+import unicodedata
 import subprocess
 import sys
 import time
@@ -56,6 +58,26 @@ def official_source(source):
         return False
 
 
+def normalize(text):
+    return "".join(char for char in unicodedata.normalize("NFKD", text.lower())
+                   if not unicodedata.combining(char))
+
+
+def semantic_check(name, answer):
+    """Minimal deterministic evidence checks, not independent factual verification."""
+    text = normalize(answer or "")
+    if name == "endereco_ubs":
+        # Mentioning a unit or its opening hours alone is NOT an address.
+        if re.search(r"\b(?:rua|avenida|av\.?|travessa|alameda|praca|rodovia|estrada)\b", text):
+            return True, "Resposta contém indicação de logradouro (verificação heurística)."
+        return False, "Pergunta de endereço sem logradouro no trecho recuperado."
+    if name == "documentos_vacina":
+        if "carteira de vacinacao" in text and ("cpf" in text or "cartao sus" in text):
+            return True, "Resposta menciona documentos de vacinação."
+        return False, "Trecho não informa documentos suficientes."
+    return True, "Cenário de segurança/abstenção verificado estruturalmente."
+
+
 def evaluate(base, case):
     name, question, expected, needs_source = case
     resp = call(base, "/api/chat", "POST", {"question": question})
@@ -71,8 +93,11 @@ def evaluate(base, case):
                    and "sem API de IA" in body.get("answer", ""))
     else:
         success = success and sources == []
+    semantic_ok, semantic_reason = semantic_check(name, body.get("answer"))
+    success = success and semantic_ok
     return {
         "case": name, "question": question, "expected_mode": expected,
+        "semantic_ok": semantic_ok, "semantic_reason": semantic_reason,
         "result": "PASSOU" if success else "FALHOU", "http_status": resp["http_status"],
         "latency_ms": resp["latency_ms"], "mode": body.get("mode"),
         "sufficient": body.get("sufficient"), "answer": body.get("answer"),
@@ -114,6 +139,10 @@ def markdown(report):
         lines.append(f"| {case['case']} | {case['http_status']} | {case.get('mode')} | {case['result']} |")
     blocked = report["blocked_method"]
     lines.append(f"| GET bloqueado no chat | {blocked['http_status']} | nginx | {blocked['result']} |")
+    lines.extend(["", "## Avaliação mínima de relevância", "",
+                  "A aprovação HTTP e o retorno de fonte não garantem resposta à intenção da pergunta.", ""])
+    for case in report["cases"]:
+        lines.append("- " + case["case"] + ": " + case.get("semantic_reason", "não avaliada"))
     lines.extend(["", "## Perguntas, respostas e fontes efetivamente retornadas", ""])
     for case in report["cases"]:
         lines.append("### " + case["case"] + " — " + case["result"])
