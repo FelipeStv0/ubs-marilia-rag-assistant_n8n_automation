@@ -71,4 +71,5 @@ document.querySelectorAll('[data-question]').forEach(button => {
 });
 fetch('/api/status').then(r => r.json()).then(data => {
   document.querySelector('#status').textContent = `Base: ${data.passages} trechos ativos · ${data.sources_ok}/${data.sources} fontes disponíveis`;
+  document.querySelector('#rag-mode').textContent = data.rag_mode === 'llm_and_vector' ? 'Modo RAG com geração habilitado.' : 'Modo de testes: busca lexical e trechos oficiais, sem API externa paga.';
 }).catch(() => { document.querySelector('#status').textContent = 'Status indisponível'; });
