@@ -119,6 +119,30 @@ def _retrieve(question: str, vector: list[float] | None):
     return ranked[:8]
 
 
+# A busca lexical pode encontrar a unidade sem o dado solicitado (ex.: horário
+# em vez de endereço). Não declarar suficiência se faltar evidência de localização.
+ADDRESS_LINE = re.compile(r"\b(?:rua|avenida|av\.?|travessa|alameda|praca|rodovia|estrada)\b", re.I)
+
+
+def location_requested(question: str) -> bool:
+    text = normalize(question)
+    return bool(re.search(r"\b(?:endereco|localizacao|onde\s+fica|qual\s+(?:a\s+)?rua)\b", text))
+
+
+def location_supported(question: str, passage: dict) -> bool:
+    """Conservative check: a location question needs an address near the unit name."""
+    text = normalize(passage.get("body", ""))
+    unit = unit_name(question)
+    if unit:
+        unit_pattern = re.compile(r"\b" + r"\s+".join(re.escape(x) for x in unit.split()) + r"\b")
+        for match in unit_pattern.finditer(text):
+            window = text[max(0, match.start() - 80):match.end() + 280]
+            if ADDRESS_LINE.search(window):
+                return True
+        return False
+    return bool(ADDRESS_LINE.search(text))
+
+
 def _public_source(row):
     return {
         "id": str(row["id"]),
@@ -148,6 +172,8 @@ def answer(question: str) -> dict:
         except Exception as exc:
             LOGGER.warning("Embeddings indisponiveis, fallback lexical: %s", type(exc).__name__)
     evidence = _retrieve(question, vector)
+    if location_requested(question):
+        evidence = [item for item in evidence if location_supported(question, item)]
     if not evidence:
         return {"answer": NO_EVIDENCE, "sources": [], "mode": "no_evidence", "sufficient": False}
     if not openai_key():

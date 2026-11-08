@@ -57,7 +57,7 @@ Os artefatos são ignorados pelo Git para evitar publicação acidental de dados
 | metodo_bloqueado | GET /api/chat | HTTP 403 pelo Nginx |
 | estado_da_base | GET /api/status | 200, rag_mode extractive_lexical, fontes com sucesso e trechos ativos |
 
-Estes são **critérios de aceitação**, não um relatório de execução já realizada. Se o coletor não obtiver evidência oficial para uma das perguntas, o cenário falhará e o relatório preservará a resposta realmente obtida. Um relatório com falhas é útil como diagnóstico; não deve ser rotulado como validação bem-sucedida.
+Estes são **critérios de aceitação**. Uma execução local anterior está documentada, mas detectou uma resposta de horário para pergunta de endereço. Veja [auditoria real](AUDITORIA_RESPOSTAS_REAIS_2026-11-08.md). Se o coletor não obtiver evidência oficial para uma das perguntas, o cenário falhará e o relatório preservará a resposta realmente obtida. Um relatório com falhas é útil como diagnóstico; não deve ser rotulado como validação bem-sucedida.
 
 Exemplo de formato esperado do endpoint (valores abaixo são **ilustrativos**, não saída observada):
 
@@ -92,6 +92,12 @@ python scripts/resumir_evidencias.py
 ```
 
 Isso gera `artifacts/resumo-publicavel.md`, contendo somente cenários, códigos HTTP, modos e quantidades de fontes. O script verifica a estrutura do JSON, não valida a veracidade de informações extraídas. Revise manualmente antes de publicar. Os artefatos continuam excluídos do Git por padrão.
+
+## Verificação de relevância — correção da revisão de 08/11/2026
+
+Os arquivos reais mostraram uma falha importante: HTTP 200, `extractive` e link oficial não bastam para assegurar que a resposta atende à pergunta. O teste `endereco_ubs` retornou horário estendido e não endereço. A partir desta revisão, o backend busca evidência de logradouro junto ao nome da unidade para perguntas de localização; na falta dessa evidência, **abstém-se**. O script `validar_execucao.py` também aplica verificação mínima de relevância para endereço e documentos. Não confundir essa heurística com verificação factual ou geocodificação.
+
+A evidência histórica está em [Auditoria das respostas reais](AUDITORIA_RESPOSTAS_REAIS_2026-11-08.md). **Não apresentar a antiga execução como 4/4 respostas semanticamente corretas.** Depois de atualizar o código local, execute o script novamente para avaliar a correção no sistema real.
 
 ## Falhas controladas
 

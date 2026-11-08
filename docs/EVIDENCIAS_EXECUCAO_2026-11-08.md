@@ -2,12 +2,14 @@
 
 > **Status:** validação funcional local concluída nos cenários apresentados. Evidências abaixo derivadas de capturas do painel n8n e do PowerShell, não de dumps do banco nem dos relatórios integrais da execução. **Protótipo independente, sem LLM ativa.**
 
+> **Atualização após recebimento dos relatórios integrais:** a auditoria de 08/11/2026 confirmou 92 trechos ativos, HTTP e tempos reais, mas identificou que o teste de endereço recebeu conteúdo de horário. **PASSOU técnico não equivale a resposta correta.** Consulte [Auditoria das respostas reais](AUDITORIA_RESPOSTAS_REAIS_2026-11-08.md). As afirmações abaixo sobre indisponibilidade dos arquivos são históricas e anteriores ao recebimento dos relatórios.
+
 ## Contexto e escopo
 
 - Ambiente: Windows PowerShell, Docker Compose, Nginx, n8n, FastAPI e PostgreSQL/pgvector, executados localmente.
 - Serviço generativo: **desativado**. Consultas extrativas com busca lexical; não houve necessidade de configurar credenciais de LLM.
 - Separação das evidências: o workflow 01 foi observado no n8n; as consultas do workflow 02 foram verificadas por `scripts/validar_execucao.py`; a integração FastAPI/PostgreSQL foi validada separadamente no GitHub Actions.
-- Momento da observação: **08/11/2026**. O horário exato da coleta e o timestamp UTC do script não estão disponíveis nas capturas aqui analisadas.
+- Momento da observação: **08/11/2026**. Posteriormente, os relatórios foram recebidos: timestamp UTC do script 2026-11-08T22:11:38.145281+00:00 e último sucesso da coleta conforme status 2026-11-08T21:00:13.384118+00:00.
 
 ## Workflow 01 — coleta e indexação
 
@@ -48,7 +50,7 @@ Saída final observada: `RESULTADO PASSOU`. O script informou a criação de `ar
 
 O fluxo coberto pelo script atravessa Nginx → webhook publicado do n8n → FastAPI → PostgreSQL, enquanto o workflow 01 de ingestão foi observado em execução separada.
 
-**Limite de rastreabilidade:** as capturas não contêm o texto integral das respostas, as URLs individuais retornadas nas consultas, latências ou o arquivo de evidências gerado localmente. Esses dados **não são reproduzidos nem presumidos** neste repositório. Para incluí-los depois de uma revisão de privacidade, exporte um resumo sanitizado com `scripts/resumir_evidencias.py`.
+**Rastreabilidade após o recebimento:** os arquivos integrais foram analisados e uma síntese revisada com URLs públicas, latências e classificação de relevância foi adicionada em [Auditoria das respostas reais](AUDITORIA_RESPOSTAS_REAIS_2026-11-08.md). Os arquivos integrais continuam fora do controle de versão, por privacidade.
 
 ## Testes automatizados disponíveis
 
@@ -62,7 +64,7 @@ Isso não equivale a confirmar que todos os serviços externos funcionarão em o
 - Precisão estatística do recuperador, estabilidade ao longo do tempo ou operação em produção.
 - Validação clínica, segurança para dados pessoais ou conformidade de uma implantação pública.
 - Execução de modelos de linguagem, embeddings pagos ou respostas generativas — **a LLM permanece desativada**.
-- Os textos integrais de perguntas/respostas/URLs não podem ser publicados como se tivessem sido analisados aqui.
+- A análise detalhada de respostas reais identificou uma falha semântica de localização; a correção exige nova execução local.
 
 ## Reprodutibilidade e privacidade
 
