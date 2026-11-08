@@ -137,22 +137,19 @@ docker compose config
 
 O GitHub Actions executa testes e valida JSONs em novas alterações. A integração completa (coleta real, execução no n8n e consulta de banco em contêineres) deve ser validada no ambiente de execução; testes unitários não substituem esse procedimento.
 
-## Evidência observada da execução local (08/11/2026)
+## Execução real auditada (08/11/2026)
 
-Na demonstração local, foram observadas **6 fontes processadas**, com **1 atualizada, 5 inalteradas e 0 falhas**. O retorno do workflow 01 indicou **92 trechos somados entre as fontes**. O smoke test do workflow 02 registrou **4 cenários de consulta aprovados**, com modos `extractive`, `no_evidence` e `safety`, além do resultado agregado `PASSOU` para as verificações do script.
+Recebemos os dois arquivos produzidos pelo teste local e auditamos respostas, referências, tempos e metadados. O sistema estava em `extractive_lexical`, com **6 fontes disponíveis, 92 trechos ativos e nenhuma falha de fonte**. O workflow de coleta foi comprovado em execução separada no n8n (1 fonte atualizada, 5 inalteradas e nenhuma falha).
 
-Os números derivam de capturas de saída do n8n e do PowerShell. **Não publicamos os textos integrais das respostas ou URLs individuais recebidas**, pois os arquivos JSON e Markdown gerados na máquina local não foram incorporados a este repositório. Os testes não comprovam atualidade ou exatidão dos dados oficiais.
+O script anterior marcou **4/4 consultas como PASSOU tecnicamente**, mas uma revisão da relevância revelou **1 falha semântica**: a pergunta sobre o endereço da UBS Castelo Branco recebeu apenas informações sobre seu horário. Os outros três cenários apresentaram o comportamento esperado (documentos de vacinação, abstenção e segurança).
 
-- [Resultados observados, cenários, metodologia e limites](docs/EVIDENCIAS_EXECUCAO_2026-11-08.md)
-- [Procedimento para repetir e auditar a execução](docs/DEMONSTRACAO.md)
+**Correção aplicada:** perguntas de endereço agora exigem indício de logradouro próximo ao nome da unidade; caso contrário, o backend retorna ausência de evidência suficiente. A avaliação automática também verifica relevância mínima dos trechos. A correção exige uma nova execução local antes de alegar que está validada ponta a ponta.
 
-Para gerar uma síntese sanitizada a partir de um relatório JSON **real** no computador local, sem copiar respostas completas:
+- [Auditoria de perguntas, respostas resumidas, links oficiais e falha identificada](docs/AUDITORIA_RESPOSTAS_REAIS_2026-11-08.md)
+- [Resultados da coleta e demonstração](docs/EVIDENCIAS_EXECUCAO_2026-11-08.md)
+- [Como repetir os testes](docs/DEMONSTRACAO.md)
 
-```powershell
-python scripts/resumir_evidencias.py
-```
-
-O arquivo `artifacts/resumo-publicavel.md` ficará ignorado pelo Git até revisão manual. **A operação permanece extrativa, sem LLM ativa e sem API paga de IA.**
+Os relatórios integrais não são publicados automaticamente; a documentação contém apenas resumo revisado e URLs públicas. **Sem LLM ativa e sem API paga de IA.**
 
 ## Demonstração auditável e testes de integração
 
