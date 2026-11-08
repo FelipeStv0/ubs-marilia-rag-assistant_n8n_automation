@@ -104,9 +104,10 @@ def _retrieve(question: str, vector: list[float] | None):
         # Evita responder a pergunta sobre uma UBS com dados de outra UBS.
         if unit:
             unit_tokens = [t for t in unit.split() if len(t) > 2 and t not in STOP]
-            if unit_tokens and not all(t in content for t in unit_tokens):
-                score *= 0.08
-            elif unit_tokens:
+            if unit_tokens and not all(re.search(r"\b" + re.escape(t) + r"\b", content) for t in unit_tokens):
+                # Nunca atribuir dados de outra unidade ao nome solicitado.
+                continue
+            if unit_tokens:
                 score += 0.8
         if score >= 0.36 and (hits or float(row.get("vec_sim") or 0) > 0.54):
             row["score"] = round(score, 4)
@@ -135,10 +136,7 @@ def answer(question: str) -> dict:
         return {
             "answer": "Este assistente fornece apenas informações administrativas e não avalia sintomas. "
                       "Se houver risco imediato à vida, acione o SAMU pelo telefone 192.",
-            "sources": [{"id": "orientacao-urgencia", "title": "Prefeitura de Marília — serviços de urgência", "url":
-                         "https://www.marilia.sp.gov.br/portal/noticias/0/3/17363/secretaria-da-saude-promove-encontro-para-divulgar-acoes-de-valorizacao-da-vida-no-municipio/",
-                         "excerpt": "SAMU — serviço de atendimento móvel de urgência; telefone 192.",
-                         "published_at": None, "checked_at": None}],
+            "sources": [],
             "mode": "safety", "sufficient": True,
         }
     vector = None
@@ -151,10 +149,20 @@ def answer(question: str) -> dict:
     if not evidence:
         return {"answer": NO_EVIDENCE, "sources": [], "mode": "no_evidence", "sufficient": False}
     if not openai_key():
+        # Neste modo nao ha geracao: apresentar texto original sem parafrasear fatos.
         best = evidence[0]
+        excerpt = best["body"][:1100].strip()
+        if not excerpt:
+            return {"answer": NO_EVIDENCE, "sources": [], "mode": "no_evidence", "sufficient": False}
         return {
-            "answer": "Encontrei este trecho de uma fonte oficial (modo sem LLM):\n\n" + best["body"][:850],
-            "sources": [_public_source(best)], "mode": "extractive", "sufficient": True,
+            "answer": (
+                "Modo de testes — sem API de IA. Trecho localizado em uma fonte oficial "
+                "(confira a unidade, a vigencia e a fonte antes de utilizar):\n\n"
+                + excerpt
+            ),
+            "sources": [_public_source(best)],
+            "mode": "extractive",
+            "sufficient": True,
         }
     try:
         payload = complete_with_evidence(question, evidence)
