@@ -1,5 +1,14 @@
 # Histórico de alterações
 
+## Registro de execução local e publicação segura — 2026-11-08
+
+- Documentado o resultado observado de 6 fontes processadas (1 atualizada, 5 inalteradas, 0 falhas, 92 trechos reportados).
+- Registrados quatro cenários reais de consulta com HTTP 200 e resultado agregado PASSOU no teste local.
+- Separadas evidências visíveis em capturas das respostas e URLs completas, indisponíveis para auditoria nesta revisão.
+- Adicionado gerador de resumo sanitizado local e testes para impedir vazamento de respostas no relatório resumido.
+- Incluído procedimento de diagnóstico para inconsistência de senhas persistidas do PostgreSQL e de chave de criptografia do n8n.
+- Mantido o aviso de modo extrativo sem LLM ativa, sem afiliacão institucional e sem garantia de vigência das fontes.
+
 ## Melhoria de evidências e integração — 2026-11-08
 
 ### Adicionado
