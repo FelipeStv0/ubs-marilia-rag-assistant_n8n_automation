@@ -14,11 +14,11 @@ function append(tag, className, parent, content) {
 
 function addMessage(role, message, sources = []) {
   const wrap = append('article', `chat-message ${role}`, messages);
-  append('div', 'label', wrap, role === 'user' ? 'VOCÊ' : 'ASSISTENTE · FONTES OFICIAIS');
+  append('div', 'label', wrap, role === 'user' ? 'VOCÊ' : 'ASSISTENTE · TRECHOS INDEXADOS');
   append('div', 'bubble', wrap, message);
   if (role === 'bot' && sources.length) {
     const group = append('section', 'sources', wrap);
-    append('div', 'label', group, 'FONTES CONSULTADAS');
+    append('div', 'label', group, 'FONTES INDEXADAS');
     for (const src of sources) {
       let parsed;
       try { parsed = new URL(src.url); } catch { continue; }
