@@ -85,6 +85,10 @@ Diagnostique com `docker compose ps -a`, `docker compose logs --tail=80 api` e `
 
 **Não use `docker compose down -v` para corrigir essas falhas.** Se houver exposição de chave de criptografia, considere-a comprometida: preserve backup, planeje a reconfiguração ou rotação das credenciais e utilize procedimento suportado pela versão instalada do n8n. Nunca cole a chave no GitHub, em issues, screenshots ou logs públicos.
 
+## Segurança e credenciais
+
+Consulte [Segurança das credenciais](SEGURANCA_CREDENCIAIS.md) para auditoria segura, backups e plano de migração da chave de criptografia do n8n que apareceu em diagnóstico. Execute `python scripts/auditar_segredos.py` para conferir a configuração local **sem exibir segredos**. Não modifique a chave mestra de uma instância existente por substituição simples do arquivo `.env`.
+
 ## Privacidade e limites
 
 Não inserir nomes, documentos, cartões SUS, diagnósticos ou dados clínicos no chat. O protótipo não é destinado a atender cidadãos pela internet sem revisão de segurança e governança. O horário da última verificação não demonstra que uma unidade esteja aberta neste momento; dados críticos devem ser confirmados diretamente na fonte oficial.

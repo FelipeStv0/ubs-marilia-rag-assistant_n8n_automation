@@ -177,6 +177,18 @@ As URLs iniciais estão em [`sources.json`](sources.json) e abrangem páginas da
 
 O sistema evita descartar o conteúdo previamente indexado quando uma coleta falha, porém **não garante a atualidade do dado**: consulte os registros de coleta e valide informações conflitantes antes de divulgação institucional.
 
+## Auditoria de credenciais (somente leitura)
+
+Para a instalação local, execute:
+
+```powershell
+python scripts/auditar_segredos.py
+```
+
+O auditor verifica configurações de segurança sem imprimir senhas ou chaves e **não altera credenciais**. A chave principal do n8n apareceu em um diagnóstico anterior e deve ser tratada como potencialmente exposta. **Não mude `N8N_ENCRYPTION_KEY` diretamente:** isso pode impedir o acesso às credenciais armazenadas. Consulte o [procedimento de segurança e migração controlada](docs/SEGURANCA_CREDENCIAIS.md).
+
+A rotação opcional de chaves de dados no n8n 2.46.5 **não substitui** a chave mestra exposta. A substituição efetiva exige nova instância com chave própria e migração validada dos dados/credenciais, sem apagar volumes existentes.
+
 ## Segurança, privacidade e escopo
 
 - Dados de saúde e informações de identificação de pacientes **não devem ser enviados** ao chat.

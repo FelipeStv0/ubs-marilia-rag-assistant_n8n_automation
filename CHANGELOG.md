@@ -1,5 +1,13 @@
 # Histórico de alterações
 
+## Auditoria preventiva de credenciais — 2026-11-08
+
+- Adicionado auditor somente leitura de `.env`, padrões de ignorados e caminhos confidenciais rastreados pelo Git; nunca imprime valores de chaves/senhas.
+- Adicionados testes unitários do auditor e checagem no CI.
+- Fortalecido `.gitignore` para backups e arquivos de chaves privadas.
+- Documentado backup consistente do PostgreSQL e plano de migração/revogação após exposição da chave mestra do n8n.
+- Esclarecido que rotação de chave de dados do n8n 2.46.5 **não** troca `N8N_ENCRYPTION_KEY` e que a troca local ainda não foi executada.
+
 ## Correção de relevância e auditoria dos relatórios reais — 2026-11-08
 
 - Recebidos e auditados JSON e Markdown da execução local, com timestamps, respostas e URLs oficiais.
