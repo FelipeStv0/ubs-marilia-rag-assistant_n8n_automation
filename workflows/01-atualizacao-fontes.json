@@ -1,0 +1,51 @@
+{
+  "id": "ubsMariliaColeta26",
+  "name": "UBS Marília | 01 - Atualização das fontes oficiais",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{"field": "hours", "hoursInterval": 6}]
+        }
+      },
+      "id": "903276bb-1032-4112-b99e-1a2247927011",
+      "name": "Agendar a cada 6 horas",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 180]
+    },
+    {
+      "parameters": {},
+      "id": "a30376bb-1032-4112-b99e-1a2247927022",
+      "name": "Executar manualmente",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 380]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/internal/reindex",
+        "sendBody": false,
+        "options": {"timeout": 240000}
+      },
+      "id": "d30376bb-1032-4112-b99e-1a2247927033",
+      "name": "Coletar, detectar mudanças e indexar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [530, 280]
+    }
+  ],
+  "connections": {
+    "Agendar a cada 6 horas": {
+      "main": [[{"node": "Coletar, detectar mudanças e indexar", "type": "main", "index": 0}]]
+    },
+    "Executar manualmente": {
+      "main": [[{"node": "Coletar, detectar mudanças e indexar", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {"timezone": "America/Sao_Paulo", "executionOrder": "v1"},
+  "active": false,
+  "pinData": {},
+  "tags": []
+}

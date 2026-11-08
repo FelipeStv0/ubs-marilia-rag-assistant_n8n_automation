@@ -1,0 +1,58 @@
+{
+  "id": "ubsMariliaChat26",
+  "name": "UBS Marília | 02 - Perguntas e respostas RAG",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ubs-marilia",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "e442da34-8ff7-4996-a725-1054c107fabc",
+      "name": "Receber pergunta",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [220, 300],
+      "webhookId": "801d7c3a-4714-430d-9419-450c79aaf42d"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/internal/answer",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ question: $json.body.question }) }}",
+        "options": {"timeout": 90000}
+      },
+      "id": "8d615b1c-5e8c-4fa5-9c20-3ce8e6ed2b83",
+      "name": "Buscar evidências e gerar resposta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [530, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "firstIncomingItem",
+        "options": {"responseCode": 200}
+      },
+      "id": "22f172c6-a9a2-49be-bce6-3a29c43cb152",
+      "name": "Responder ao chat",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [840, 300]
+    }
+  ],
+  "connections": {
+    "Receber pergunta": {
+      "main": [[{"node": "Buscar evidências e gerar resposta", "type": "main", "index": 0}]]
+    },
+    "Buscar evidências e gerar resposta": {
+      "main": [[{"node": "Responder ao chat", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {"timezone": "America/Sao_Paulo", "executionOrder": "v1"},
+  "active": false,
+  "pinData": {},
+  "tags": []
+}

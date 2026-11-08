@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Assistente experimental de informações oficiais sobre UBS e USF de Marília/SP." />
+  <title>Saúde Marília | Assistente de unidades</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand-mark" aria-hidden="true">+</div>
+      <div class="brand-copy"><b>Saúde Marília</b><small>Assistente de informações</small></div>
+      <div class="sidebar-spacer"></div>
+      <div class="panel-label">TÓPICOS</div>
+      <button class="topic" data-question="Qual é o horário da UBS Nova Marília?">Horários das unidades</button>
+      <button class="topic" data-question="Onde fica a UBS Castelo Branco?">Endereços e localização</button>
+      <button class="topic" data-question="Quais documentos preciso levar para me vacinar?">Vacinação e documentos</button>
+      <button class="topic" data-question="Quais UBS de Marília atendem até às 22h?">Horário estendido</button>
+      <div class="sidebar-spacer"></div>
+      <div id="status" class="status">Verificando base de dados...</div>
+      <div class="secondary-note">Protótipo acadêmico independente. Não é um canal oficial da Prefeitura de Marília.</div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="eyebrow">ATENÇÃO PRIMÁRIA · MARÍLIA / SP</div>
+        <span class="edition">ASSISTENTE RAG</span>
+      </header>
+      <section id="messages" class="messages" aria-live="polite">
+        <article class="intro">
+          <div class="intro-symbol">+</div>
+          <div class="eyebrow">INFORMAÇÃO COM FONTE</div>
+          <h1>Como podemos ajudar?</h1>
+          <p>Consulte informações administrativas sobre UBS, USF, vacinação, documentos e horários. As respostas usam trechos de páginas oficiais previamente cadastradas.</p>
+          <div class="suggestions">
+            <button data-question="Qual é o endereço da UBS Nova Marília?">Endereço da UBS Nova Marília <span>↗</span></button>
+            <button data-question="Quais documentos devo levar para vacinação?">Documentos para vacinação <span>↗</span></button>
+          </div>
+        </article>
+      </section>
+      <form id="chat-form" class="composer">
+        <label for="question" class="sr-only">Sua pergunta</label>
+        <input id="question" name="question" maxlength="600" placeholder="Pergunte sobre uma unidade de saúde..." autocomplete="off" required />
+        <button id="send" type="submit" aria-label="Enviar pergunta">Enviar <span>↗</span></button>
+      </form>
+      <p class="disclaimer">Não fornece diagnósticos ou avaliação de sintomas. Em situações de emergência, ligue 192 (SAMU). Verifique informações críticas com a unidade.</p>
+    </main>
+  </div>
+  <script src="app.js" defer></script>
+</body>
+</html>

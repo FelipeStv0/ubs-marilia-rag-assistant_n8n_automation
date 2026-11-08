@@ -1,0 +1,50 @@
+[
+  {
+    "id": "marilia_unidades",
+    "title": "Prefeitura de Marília — Unidades de Saúde",
+    "url": "https://www.marilia.sp.gov.br/portal/secretarias-paginas/16/unidades-de-saude---marilia-e-regiao/",
+    "category": "unidades",
+    "priority": 80,
+    "published_at": null
+  },
+  {
+    "id": "marilia_horarios_ampliados",
+    "title": "Secretaria de Saúde de Marília — Mais Saúde, Mais Horário (10/09/2026)",
+    "url": "https://saude.marilia.sp.gov.br/video/programa-mais-saude-mais-horario/17",
+    "category": "horarios",
+    "priority": 100,
+    "published_at": "2026-09-10"
+  },
+  {
+    "id": "marilia_multivacinacao_2026",
+    "title": "Secretaria de Saúde de Marília — Campanha de Multivacinação 2026",
+    "url": "https://saude.marilia.sp.gov.br/noticias/saude---prefeitura-de-marilia-intensifica-a-campanha-de-multivacinacao-2026/817",
+    "category": "vacinacao",
+    "priority": 95,
+    "published_at": null
+  },
+  {
+    "id": "ms_vacinacao",
+    "title": "Ministério da Saúde — Vacinação",
+    "url": "https://www.gov.br/saude/pt-br/vacinacao/vacinacao/",
+    "category": "vacinacao",
+    "priority": 70,
+    "published_at": null
+  },
+  {
+    "id": "ms_calendario",
+    "title": "Ministério da Saúde — Calendário Nacional de Vacinação",
+    "url": "https://www.gov.br/saude/pt-br/vacinacao/calendario",
+    "category": "vacinacao",
+    "priority": 70,
+    "published_at": null
+  },
+  {
+    "id": "marilia_urgencia",
+    "title": "Prefeitura de Marília — Orientações sobre serviços de urgência",
+    "url": "https://www.marilia.sp.gov.br/portal/noticias/0/3/17363/secretaria-da-saude-promove-encontro-para-divulgar-acoes-de-valorizacao-da-vida-no-municipio/",
+    "category": "orientacoes",
+    "priority": 85,
+    "published_at": null
+  }
+]
