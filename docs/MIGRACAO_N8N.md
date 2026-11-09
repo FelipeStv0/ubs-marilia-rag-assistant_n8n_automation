@@ -42,6 +42,16 @@ O n8n novo **não usa o PostgreSQL antigo para suas próprias tabelas**, mas uti
 
 **Não publique arquivos `.env`, dumps, arquivos `.tar.gz` do n8n, capturas de valores secretos ou exportações integrais de credenciais.**
 
+## Provisionar em um computador novo (sem volumes anteriores)
+
+Se não existe instalação anterior, gere o `.env` do PostgreSQL com `python scripts/gerar_env.py` antes de criar volumes. Depois execute:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\preparar_n8n_migrado.ps1
+```
+
+O script gera chave aleatória para o n8n novo somente se não houver `.env` nem volume `ubs_n8n_nova_data`. **Se o volume existir sem a chave, aborta deliberadamente** para impedir perda de acesso ao SQLite. Não imprime a chave. Depois siga a ordem de inicialização e importe os workflows pelo editor `http://localhost:5679`, mantendo apenas um fluxo de coleta agendado.
+
 ## Atualizar a configuração local sem substituir a chave
 
 Execute no PowerShell dentro da pasta do projeto atualizado. **Antes de substituir os arquivos**, preserve o `.env` original e o `.env` PRIVADO da nova instância, em locais diferentes.
