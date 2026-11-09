@@ -24,3 +24,7 @@ backup-privado/
 backups/
 n8n_data/
 .env-backup*
+
+# Configuracao local de migracao (inclui possiveis segredos)
+migracao-n8n/
+*.backup.*
