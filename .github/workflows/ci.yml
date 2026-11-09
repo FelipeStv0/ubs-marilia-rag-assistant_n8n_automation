@@ -25,6 +25,14 @@ jobs:
           python -m json.tool sources.json >/dev/null
           python -m json.tool workflows/01-atualizacao-fontes.json >/dev/null
           python -m json.tool workflows/02-perguntas-rag.json >/dev/null
+      - name: Validate both Compose configurations (dummy secret, no real credentials)
+        env:
+          POSTGRES_PASSWORD: ci_test_only
+        run: |
+          docker compose -f docker-compose.yml config --quiet
+          printf 'N8N_ENCRYPTION_KEY=ci_dummy_only_do_not_use\n' > deploy/.env
+          docker compose -f deploy/n8n-migrado.compose.yaml config --quiet
+          rm -f deploy/.env
       - name: Audit tracked credential paths without reading secrets
         run: python scripts/auditar_segredos.py --ci
       - name: Verify no committed secrets
