@@ -73,7 +73,7 @@ Veja [Arquitetura e decisões técnicas](docs/ARQUITETURA.md), [Operação](docs
 4. Abra o editor do [n8n migrado](http://localhost:5679). Verifique que os **dois** workflows estejam separados e publicados; mantenha o fluxo de coleta antigo despublicado.
 5. Abra o [chat local](http://localhost:8080). O modo padrão continua **extrativo/lexical, sem API paga de IA**.
 
-Para uma **instalação nova do zero**, consulte o [guia de migração e configuração](docs/MIGRACAO_N8N.md), crie os recursos Docker externos e uma chave privada inédita; não reaproveite a chave antiga exposta. Este guia preserva dados de instalações já migradas e não gera uma chave sobre SQLite existente.
+Para uma **instalação nova do zero**, com o `.env` do banco gerado com `python scripts/gerar_env.py` (somente se ainda não houver volumes persistentes), execute `powershell -ExecutionPolicy Bypass -File .\scripts\preparar_n8n_migrado.ps1` para criar **sem sobrescrever** o arquivo privado e o volume novo; em seguida, inicie na ordem indicada e importe os dois workflows via interface. Consulte o [guia de migração](docs/MIGRACAO_N8N.md). Não reaproveite a chave antiga exposta. Este guia preserva dados de instalações já migradas e não gera uma chave sobre SQLite existente.
 
 > **Importante:** o projeto contém somente o **template sem segredos** do n8n migrado. A instância depende do arquivo `.env` privado, do volume `ubs_n8n_nova_data` e da rede `assistente-ubs-marilia_private`. Não é seguro publicar esses dados para tornar o tutorial "plug-and-play".
 
