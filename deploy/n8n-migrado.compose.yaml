@@ -1,0 +1,45 @@
+# Copie este arquivo para uma pasta PRIVADA fora do repositorio, por exemplo:
+# Documents/UBS-Backup/migracao-n8n/compose.yaml
+# Coloque nessa mesma pasta um .env PRIVADO com N8N_ENCRYPTION_KEY ja criada.
+# NUNCA substitua a chave da instancia legada nem remova os volumes antigos.
+name: ubs-n8n-migrado
+
+services:
+  n8n:
+    image: n8nio/n8n:2.46.5
+    container_name: ubs-n8n-novo
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_TYPE: sqlite
+      N8N_HOST: localhost
+      N8N_PORT: "5678"
+      N8N_PROTOCOL: http
+      N8N_EDITOR_BASE_URL: http://localhost:5679/
+      WEBHOOK_URL: http://localhost:5679/
+      N8N_SECURE_COOKIE: "false"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      GENERIC_TIMEZONE: America/Sao_Paulo
+      TZ: America/Sao_Paulo
+      EXECUTIONS_DATA_SAVE_ON_SUCCESS: none
+      EXECUTIONS_DATA_SAVE_ON_ERROR: none
+      EXECUTIONS_DATA_SAVE_ON_PROGRESS: "false"
+      EXECUTIONS_DATA_PRUNE: "true"
+      EXECUTIONS_DATA_MAX_AGE: "168"
+    ports:
+      - "127.0.0.1:5679:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - privada
+
+volumes:
+  n8n_data:
+    external: true
+    name: ubs_n8n_nova_data
+
+networks:
+  privada:
+    external: true
+    name: assistente-ubs-marilia_private
