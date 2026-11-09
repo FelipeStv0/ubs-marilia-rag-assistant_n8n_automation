@@ -7,51 +7,59 @@
 - Acesso à internet para buscar os endereços oficiais selecionados em `sources.json`.
 - **Não é necessária** uma chave de API externa paga para o modo de testes.
 
-## Primeira execução
+## Inicialização com n8n migrado (09/11/2026)
+
+A instalação documentada usa **dois projetos Compose**: principal (`db`, `api`, `web`) e privado (`ubs-n8n-novo`). **O n8n antigo está parado e não é iniciado automaticamente pelo Compose principal.** O Nginx agora encaminha `/api/chat` para `ubs-n8n-novo:5678`.
+
+O `.env` da raiz continua contendo a senha de PostgreSQL; o `.env` da pasta privada de migração contém a nova chave de criptografia. **Não substitua nem misture esses arquivos.** Siga o [roteiro completo de migração](MIGRACAO_N8N.md).
 
 ```powershell
-python scripts/gerar_env.py
-docker compose up -d --build
+$pasta = "$HOME\Documents\UBS-Backup\migracao-n8n"
+docker compose up -d --build db api
+docker compose -f "$pasta\compose.yaml" up -d
+docker compose up -d web
 docker compose ps
+docker compose -f "$pasta\compose.yaml" ps
+python scripts/validar_execucao.py
 ```
 
-Abra `http://localhost:5678`, crie o usuário proprietário, importe os workflows em `workflows/` e clique em **Publish** em cada um. Para a primeira coleta, execute manualmente o workflow 01. Interface: `http://localhost:8080`.
+O Nginx depende de o n8n novo existir na rede. **Não execute simplesmente `docker compose up -d` na primeira inicialização** antes de iniciar o n8n migrado. O comando `scripts/iniciar_windows.ps1` aplica a ordem segura e não gera senhas em ambiente existente.
 
-> O script `scripts/iniciar_windows.ps1` orienta as etapas de instalação e importação.
-
-## Verificações
+## Verificações e diagnóstico
 
 ```powershell
-docker compose ps
+$pasta = "$HOME\Documents\UBS-Backup\migracao-n8n"
+docker compose ps -a
+docker compose -f "$pasta\compose.yaml" ps
 docker compose logs --tail=100 api
-docker compose logs --tail=100 n8n
-docker compose exec -T api python -m app.bootstrap
+docker compose -f "$pasta\compose.yaml" logs --tail=100 n8n
+docker compose exec -T web nginx -t
+docker compose exec -T api ls -l /app/sources.json
 ```
 
-A consulta `http://localhost:8080/api/status` informa quantidade de trechos ativos e fontes com coleta concluída, quando os serviços estiverem disponíveis. Se todos os indicadores forem zero, a ingestão pode ainda não ter ocorrido ou ter falhado.
+O status do chat é `http://localhost:8080/api/status`, e o editor novo é `http://localhost:5679`.
 
 ## Atualização segura
 
-1. **Antes de substituir os arquivos**, preserve o `.env` em um local seguro (fora do GitHub). Nunca altere `N8N_ENCRYPTION_KEY` sem um plano de migração de credenciais.
-2. Faça backup dos volumes `postgres_data` e `n8n_data`. Para backups consistentes, use `pg_dump` para o PostgreSQL e o procedimento de backup recomendado para o n8n.
-3. Atualize o código-fonte. Não apague `.env`, volumes ou dados.
-4. Execute `docker compose up -d --build`.
-5. Valide `docker compose ps`, os logs, a coleta manual e uma consulta no chat.
-6. Caso o arquivo JSON de um workflow tenha mudado, revise as diferenças e importe/publice conscientemente; a alteração do JSON em disco não garante atualização de um workflow já salvo no n8n.
+1. Faça backup do `.env` antigo, do `.env` **novo**, do `automacao.backup`, dos workflows e do volume novo. Guarde cópias fora do repositório; não compartilhe prints contendo valores.
+2. Atualize os arquivos do GitHub sem substituir nenhum `.env` privado.
+3. Revise a diferença entre `deploy/n8n-migrado.compose.yaml` e o Compose privado; copie o novo template para a pasta privada apenas depois de preservar o anterior. Não execute `down -v`.
+4. Inicie os serviços na ordem documentada e valide `python scripts/validar_execucao.py`.
+5. Teste separadamente a coleta manual do workflow 01 (`failed=0`). A troca do JSON `workflows/` no disco não atualiza automaticamente os fluxos importados pelo n8n.
 
-**Nota sobre SQL:** `db/init.sql` é executado automaticamente **somente na inicialização de um volume PostgreSQL novo**. Alterações futuras no esquema devem usar migrações versionadas; não remova volumes para aplicar mudanças.
+O esquema SQL em `db/init.sql` só é aplicado automaticamente no primeiro boot de um volume novo; alterações posteriores exigem migração SQL versionada.
 
 ## Erros comuns
 
 | Sintoma | Diagnóstico |
 |---|---|
-| `localhost:5678` indisponível | Verificar Docker Desktop, `docker compose ps` e logs do n8n |
-| `localhost:8080` mostra erro de chat | Verificar publicação do workflow 02, webhook de produção e logs |
-| Nenhuma fonte indexada | Executar workflow 01 manualmente, verificar URLs e logs da API |
-| Fonte marcada como erro | Layout alterado, HTTP indisponível, conteúdo vazio ou fora da allowlist |
-| Resultado pouco específico | Revisar origem, trecho e pergunta; no modo sem LLM a resposta é extrativa |
-| Workflow editado não refletiu no chat | Publicar a nova versão do workflow no n8n |
-| Docker não inicia no Windows | Conferir WSL 2, virtualização e Docker Desktop |
+| `localhost:5679` indisponível | Verifique `docker compose -f "$pasta\compose.yaml" ps` e os logs do n8n migrado |
+| `localhost:8080` indisponível | Garanta a ordem db/api → n8n novo → web; confirme resolução `ubs-n8n-novo` no Nginx |
+| HTTP 500 em `/internal/reindex` | Confirme `/app/sources.json` e o bind mount atual da API; já ocorreu falha por caminho antigo |
+| `POST /api/chat` falha | Verifique workflow 02 publicado no n8n novo e conectividade com `api:8000` |
+| Coleta automática duplicada | Mantenha workflow 01 legado despublicado e n8n antigo desligado |
+| `Mismatching encryption keys` | Não regenere a chave nova; restaure seu `.env` privado correspondente ao volume SQLite |
+| Docker não inicia | Confirme WSL 2, Docker Desktop, redes e volumes externos |
 
 ## Testes
 
@@ -60,6 +68,7 @@ python -m pip install -r api/requirements-dev.txt
 python -m pytest -q tests/
 python -m compileall -q api/app scripts
 docker compose config
+# Arquivo privado: docker compose -f "$pasta\compose.yaml" config --quiet
 ```
 
 A automação GitHub Actions cobre testes unitários e estrutura. A validação integrada do n8n, Nginx, banco e coleta exige executar o Compose localmente.
@@ -76,12 +85,12 @@ A execução manual do workflow n8n 01 deve ser confirmada separadamente nas exe
 
 ## Recuperação após regenerar .env em volumes existentes
 
-Se o `.env` for recriado com novos segredos, os volumes PostgreSQL e n8n **não** passam a usar automaticamente as novas credenciais. Podem ocorrer dois sintomas diferentes:
+Se o `.env` for recriado com novos segredos, os volumes PostgreSQL e o n8n legado **não** passam a usar automaticamente as novas credenciais. Podem ocorrer dois sintomas diferentes:
 
 - FastAPI com `unhealthy` e erro PostgreSQL `password authentication failed`: o usuário do banco ainda possui a senha anterior. É necessário reconciliar a senha com um procedimento autorizado e verificado, sem expor credenciais.
 - n8n reiniciando com `Mismatching encryption keys`: o segredo `N8N_ENCRYPTION_KEY` no ambiente não corresponde ao segredo da instalação persistida. Restaurar a configuração originalmente usada a partir de backup confiável, sem publicar a chave. Não alterar ou substituir arbitrariamente a chave, pois credenciais criptografadas podem ficar ilegíveis.
 
-Diagnostique com `docker compose ps -a`, `docker compose logs --tail=80 api` e `docker compose logs --tail=80 n8n`. Proteja a saída dos comandos: arquivos de configuração e variáveis de ambiente podem conter segredos.
+Diagnostique com `docker compose ps -a`, `docker compose logs --tail=80 api` e os logs do Compose **privado** do n8n migrado. Proteja a saída dos comandos: arquivos de configuração e variáveis de ambiente podem conter segredos.
 
 **Não use `docker compose down -v` para corrigir essas falhas.** Se houver exposição de chave de criptografia, considere-a comprometida: preserve backup, planeje a reconfiguração ou rotação das credenciais e utilize procedimento suportado pela versão instalada do n8n. Nunca cole a chave no GitHub, em issues, screenshots ou logs públicos.
 
