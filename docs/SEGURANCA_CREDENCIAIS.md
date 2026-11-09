@@ -73,4 +73,4 @@ Documentação oficial: https://docs.n8n.io/deploy/host-n8n/configure-n8n/securi
 - [n8n — Configuração da chave da instância](https://docs.n8n.io/deploy/host-n8n/configure-n8n/basic-configuration/configuration-examples/set-a-custom-encryption-key)
 - [Docker — Compose Secrets](https://docs.docker.com/compose/how-tos/use-secrets)
 
-**Estado:** medidas preventivas podem ser aplicadas no repositório agora. **A chave mestra exposta só será substituída efetivamente quando a migração local controlada for realizada.**
+**Estado em 09/11/2026:** a instância nova foi criada com chave própria, fluxo de atendimento e coleta testados, e o contêiner antigo foi parado. Isso retira a chave antiga do caminho operacional ativo, **mas não a apaga dos backups ou do volume legado**, que devem permanecer privados. Consulte [Migração verificada e recuperação](MIGRACAO_N8N.md).
