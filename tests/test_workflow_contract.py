@@ -15,7 +15,7 @@ def test_chat_routes_match():
     assert nodes["n8n-nodes-base.webhook"]["parameters"]["responseMode"] == "responseNode"
     assert nodes["n8n-nodes-base.httpRequest"]["parameters"]["url"] == "http://api:8000/internal/answer"
     assert nodes["n8n-nodes-base.respondToWebhook"]["parameters"]["respondWith"] == "firstIncomingItem"
-    assert "proxy_pass http://n8n:5678/webhook/ubs-marilia;" in (
+    assert "proxy_pass http://ubs-n8n-novo:5678/webhook/ubs-marilia;" in (
         ROOT / "nginx" / "default.conf"
     ).read_text(encoding="utf-8")
 
