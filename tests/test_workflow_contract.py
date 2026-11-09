@@ -15,7 +15,7 @@ def test_chat_routes_match():
     assert nodes["n8n-nodes-base.webhook"]["parameters"]["responseMode"] == "responseNode"
     assert nodes["n8n-nodes-base.httpRequest"]["parameters"]["url"] == "http://api:8000/internal/answer"
     assert nodes["n8n-nodes-base.respondToWebhook"]["parameters"]["respondWith"] == "firstIncomingItem"
-    assert "proxy_pass http://n8n:5678/webhook/ubs-marilia;" in (
+    assert "proxy_pass http://ubs-n8n-novo:5678/webhook/ubs-marilia;" in (
         ROOT / "nginx" / "default.conf"
     ).read_text(encoding="utf-8")
 
@@ -25,3 +25,19 @@ def test_refresh_has_manual_and_scheduled_paths():
     assert "n8n-nodes-base.manualTrigger" in nodes
     assert "n8n-nodes-base.scheduleTrigger" in nodes
     assert nodes["n8n-nodes-base.httpRequest"]["parameters"]["url"] == "http://api:8000/internal/reindex"
+
+
+def test_migrated_compose_and_main_stack_contract():
+    main = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+    migrated = (ROOT / "deploy" / "n8n-migrado.compose.yaml").read_text(encoding="utf-8")
+    nginx = (ROOT / "nginx" / "default.conf").read_text(encoding="utf-8")
+    assert "\n  n8n:\n" not in main
+    assert "condition: service_healthy" in main
+    assert "ubs-n8n-novo:5678/webhook/ubs-marilia" in nginx
+    assert "name: assistente-ubs-marilia_private" in migrated
+    assert "name: ubs_n8n_nova_data" in migrated
+    assert "container_name: ubs-n8n-novo" in migrated
+    assert "127.0.0.1:5679:5678" in migrated
+    assert "env_file:" in migrated
+    assert "N8N_ENCRYPTION_KEY:" not in migrated
+    assert "DB_TYPE: sqlite" in migrated

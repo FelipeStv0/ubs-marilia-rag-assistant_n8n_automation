@@ -1,5 +1,16 @@
 # Histórico de alterações
 
+## Migração validada de n8n para nova chave — 2026-11-09
+
+- Registrados backups privados (PostgreSQL, três workflows, volume n8n antigo) e restauração isolada do PostgreSQL (3 workflows, 108 registros de `ubs.passages`).
+- Novo n8n com SQLite independente, volume `ubs_n8n_nova_data`, chave inédita e Compose privado.
+- Nginx passou a encaminhar o chat para `ubs-n8n-novo`, na rede privada compartilhada.
+- Removido o serviço de n8n antigo do Compose principal para impedir reativação acidental por `docker compose up`. Volume legado preservado.
+- Corrigidos scripts e documentação para ordem segura de inicialização e workflows separados.
+- Observados 6/6 fontes sem falhas no novo n8n, e 4/4 cenários de atendimento aprovados após parar o n8n antigo.
+- Incluídos testes estáticos dos contratos de Nginx/Compose e validação de YAML no CI.
+- Backups privados e chave antiga mantidos fora do controle de versão; nenhuma credencial nova publicada.
+
 ## Auditoria preventiva de credenciais — 2026-11-08
 
 - Adicionado auditor somente leitura de `.env`, padrões de ignorados e caminhos confidenciais rastreados pelo Git; nunca imprime valores de chaves/senhas.

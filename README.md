@@ -50,37 +50,32 @@ flowchart TD
 
 **Dois processos independentes:** o primeiro verifica e atualiza a base; o segundo recebe perguntas e recupera trechos já indexados. A conversa não acessa páginas arbitrárias da internet. Nenhuma URL enviada pelo usuário é consultada durante o atendimento.
 
-Veja [Arquitetura e decisões técnicas](docs/ARQUITETURA.md) e [Operação e resolução de problemas](docs/OPERACAO.md).
+Veja [Arquitetura e decisões técnicas](docs/ARQUITETURA.md), [Operação](docs/OPERACAO.md) e [Migração do n8n verificada](docs/MIGRACAO_N8N.md).
 
-## Instalação (Windows 11)
+## Instalação e operação (Windows 11) — arquitetura migrada
 
-**Requisitos:** Docker Desktop com WSL 2 e Python 3.11+ no PATH. Git é recomendado para versionamento, mas não é necessário para executar os contêineres.
+**Requisitos:** Docker Desktop com WSL 2 e Python 3.11+. A instalação do n8n é separada do Compose principal para manter uma nova chave sem reativar a instância antiga.
 
-1. Clone ou extraia o projeto e abra o PowerShell na pasta que contém `docker-compose.yml`.
-2. Crie a configuração local:
+**Instalação local validada em 09/11/2026:** a nova instância do n8n usa SQLite em `ubs_n8n_nova_data`, sua própria chave privada e a porta 5679. O Compose principal contém PostgreSQL, FastAPI e Nginx (porta 8080). O n8n antigo foi parado e **não faz mais parte dos serviços de inicialização do Compose principal**. Nunca use `docker compose down -v`.
+
+1. Abra o PowerShell na pasta do projeto. Preserve o `.env` do PostgreSQL e a chave nova em `$HOME\Documents\UBS-Backup\migracao-n8n\.env`, **ambos privados e distintos**.
+2. Copie o template `deploy/n8n-migrado.compose.yaml` para `$HOME\Documents\UBS-Backup\migracao-n8n\compose.yaml` (preserve cópia do Compose privado anterior). Não substitua o `.env` novo.
+3. Inicie **na ordem**:
    ```powershell
-   python scripts/gerar_env.py
-   ```
-3. Mantenha `OPENAI_API_KEY=` **vazio** no `.env` durante a fase de testes. O script gera senhas locais para PostgreSQL e para a criptografia do n8n. **Nunca publique o `.env`.**
-4. Inicie os contêineres:
-   ```powershell
-   docker compose up -d --build
+   $pasta = "$HOME\Documents\UBS-Backup\migracao-n8n"
+   docker compose up -d --build db api
+   docker compose -f "$pasta\compose.yaml" up -d
+   docker compose up -d web
    docker compose ps
+   python scripts/validar_execucao.py
    ```
-5. Acesse [n8n local](http://localhost:5678) e configure a conta proprietária.
-6. Importe os arquivos `workflows/01-atualizacao-fontes.json` e `workflows/02-perguntas-rag.json`, pelo menu **Import from File** do editor, e publique os dois workflows. Como alternativa, execute `python scripts/instalar_workflows.py` após criar a conta proprietária.
-7. Faça a primeira coleta: no workflow 01, execute manualmente, ou rode:
-   ```powershell
-   docker compose exec -T api python -m app.bootstrap
-   ```
-8. Abra o chat em [http://localhost:8080](http://localhost:8080).
+   Alternativa segura para a instalação existente: `powershell -ExecutionPolicy Bypass -File .\scripts\iniciar_windows.ps1`.
+4. Abra o editor do [n8n migrado](http://localhost:5679). Verifique que os **dois** workflows estejam separados e publicados; mantenha o fluxo de coleta antigo despublicado.
+5. Abra o [chat local](http://localhost:8080). O modo padrão continua **extrativo/lexical, sem API paga de IA**.
 
-Alternativa guiada para Windows:
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\iniciar_windows.ps1
-```
+Para uma **instalação nova do zero**, com o `.env` do banco gerado com `python scripts/gerar_env.py` (somente se ainda não houver volumes persistentes), execute `powershell -ExecutionPolicy Bypass -File .\scripts\preparar_n8n_migrado.ps1` para criar **sem sobrescrever** o arquivo privado e o volume novo; em seguida, inicie na ordem indicada e importe os dois workflows via interface. Consulte o [guia de migração](docs/MIGRACAO_N8N.md). Não reaproveite a chave antiga exposta. Este guia preserva dados de instalações já migradas e não gera uma chave sobre SQLite existente.
 
-**Atenção:** se já possui uma instalação funcionando, não apague os volumes Docker nem altere `N8N_ENCRYPTION_KEY`; a chave é necessária para descriptografar credenciais salvas no n8n. Antes de substituir os arquivos, faça backup do `.env` em local seguro e de seus volumes. Veja [Atualização segura](docs/OPERACAO.md).
+> **Importante:** o projeto contém somente o **template sem segredos** do n8n migrado. A instância depende do arquivo `.env` privado, do volume `ubs_n8n_nova_data` e da rede `assistente-ubs-marilia_private`. Não é seguro publicar esses dados para tornar o tutorial "plug-and-play".
 
 ## Execução sem serviço pago de IA
 
@@ -100,7 +95,7 @@ O suporte a LLM é opcional e deve ser habilitado somente com aprovação do pro
 | Serviço | Endereço |
 | --- | --- |
 | Interface de consultas | http://localhost:8080 |
-| Editor n8n | http://localhost:5678 |
+| Editor n8n migrado | http://localhost:5679 |
 | Banco e API | Acessíveis somente na rede interna do Docker |
 
 A documentação automática do FastAPI não é exposta publicamente. O backend oferece `GET /health`, `GET /internal/status`, `POST /internal/reindex` e `POST /internal/answer` **na rede privada**. A interface utiliza o webhook do n8n e o proxy do Nginx.
@@ -109,7 +104,7 @@ A documentação automática do FastAPI não é exposta publicamente. O backend 
 
 ```text
 .
-├── .github/workflows/ci.yml       # Testes automáticos
+├── .github/workflows/ci.yml       # Testes automáticos\n├── deploy/n8n-migrado.compose.yaml # Template sem chaves para n8n novo
 ├── api/
 │   ├── app/                       # API, coletor, busca e integrações opcionais
 │   ├── Dockerfile
@@ -187,7 +182,7 @@ python scripts/auditar_segredos.py
 
 O auditor verifica configurações de segurança sem imprimir senhas ou chaves e **não altera credenciais**. A chave principal do n8n apareceu em um diagnóstico anterior e deve ser tratada como potencialmente exposta. **Não mude `N8N_ENCRYPTION_KEY` diretamente:** isso pode impedir o acesso às credenciais armazenadas. Consulte o [procedimento de segurança e migração controlada](docs/SEGURANCA_CREDENCIAIS.md).
 
-A rotação opcional de chaves de dados no n8n 2.46.5 **não substitui** a chave mestra exposta. A substituição efetiva exige nova instância com chave própria e migração validada dos dados/credenciais, sem apagar volumes existentes.
+A rotação opcional de chaves de dados no n8n 2.46.5 **não substitui** a chave mestra exposta. **A migração local foi executada e testada em 09/11/2026**: a nova instância usa chave inédita, SQLite independente e dois workflows; o n8n antigo foi desligado, preservando os backups. Consulte [evidências e procedimentos de recuperação](docs/MIGRACAO_N8N.md).
 
 ## Segurança, privacidade e escopo
 
@@ -196,6 +191,12 @@ A rotação opcional de chaves de dados no n8n 2.46.5 **não substitui** a chave
 - O n8n e o chat escutam apenas `127.0.0.1` no ambiente Docker Compose fornecido.
 - Nunca versionar `.env`, tokens, credenciais, bancos exportados, dumps ou dados reais de pacientes.
 - Para produção: HTTPS, controle de acesso, monitoramento, política de retenção e auditoria, revisão institucional e avaliação de LGPD e acessibilidade.
+
+## Migração operacional comprovada (09/11/2026)
+
+Em execução local, após corrigir uma montagem antiga de `sources.json` na FastAPI, o workflow 01 do **n8n novo** processou **6 fontes (6 inalteradas, 0 falhas)**. O workflow 02 do n8n novo continuou aprovando **4/4 cenários** pelo Nginx, inclusive **após parar o n8n legado**. A configuração versionada agora registra o novo proxy e impede que o Compose principal inicialize o n8n antigo.
+
+Essa evidência não comprova ausência de outras vulnerabilidades nem vigência clínica ou administrativa das fontes. Os backups e a antiga chave ainda existem somente nos arquivos/volumes privados do operador.
 
 ## Evolução planejada
 

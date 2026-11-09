@@ -1,33 +1,21 @@
-"""Importa e publica os dois workflows após a criação da conta proprietária do n8n."""
-from pathlib import Path
-import subprocess
+"""Instrucoes seguras de importacao para o n8n migrado.
+
+Nao executa importacao automaticamente: evita sobrescrever IDs, publicar fluxos
+duplicados ou reiniciar uma instancia legado com chave exposta.
+"""
 import sys
-
-ROOT = Path(__file__).resolve().parents[1]
-
-
-def run(*args):
-    print('+', ' '.join(args), flush=True)
-    subprocess.run(list(args), cwd=ROOT, check=True)
 
 
 def main():
-    if not (ROOT / '.env').exists():
-        print('Primeiro execute: python scripts/gerar_env.py')
-        return 1
-    try:
-        run('docker', 'compose', 'exec', '-T', 'n8n', 'n8n',
-            'import:workflow', '--separate', '--input=/files/workflows')
-        for id in ('ubsMariliaColeta26', 'ubsMariliaChat26'):
-            run('docker', 'compose', 'exec', '-T', 'n8n', 'n8n', 'publish:workflow', '--id=' + id)
-        print('Workflows importados e publicados. Executando coleta inicial...')
-        run('docker', 'compose', 'exec', '-T', 'api', 'python', '-m', 'app.bootstrap')
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        print('Falha de instalacao. Consulte README.md: importacao manual e diagnostico.', file=sys.stderr)
-        return 1
-    print('Pronto: http://localhost:8080 (chat) e http://localhost:5678 (n8n).')
+    print("Instalacao automatica desabilitada apos a migracao do n8n.")
+    print("Abra http://localhost:5679 e importe separadamente:")
+    print(" - workflows/01-atualizacao-fontes.json")
+    print(" - workflows/02-perguntas-rag.json")
+    print("Revise os nos e endpoints antes de publicar.")
+    print("Garanta que somente um workflow de coleta fique publicado.")
+    print("Consulte docs/MIGRACAO_N8N.md.")
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

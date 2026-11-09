@@ -1,13 +1,26 @@
 $ErrorActionPreference = 'Stop'
-Set-Location $PSScriptRoot\..
-python scripts\gerar_env.py
-if ($LASTEXITCODE -ne 0) { throw 'Nao foi possivel preparar .env' }
-Write-Host 'Para usar IA generativa, edite .env e preencha OPENAI_API_KEY. Sem chave, funcionara o modo de trechos oficiais.'
-Read-Host 'Pressione ENTER quando o arquivo .env estiver pronto'
-docker compose up -d --build
-if ($LASTEXITCODE -ne 0) { throw 'Falha ao iniciar Docker Compose' }
-Start-Process 'http://localhost:5678'
-Read-Host 'Crie a conta proprietaria no n8n. Apos concluir, pressione ENTER para importar os workflows'
-python scripts\instalar_workflows.py
-if ($LASTEXITCODE -ne 0) { throw 'Falha ao instalar workflows; veja README.md' }
-Start-Process 'http://localhost:8080'
+Set-Location (Join-Path $PSScriptRoot '..')
+if (-not (Test-Path '.env')) {
+    throw 'Arquivo .env do PostgreSQL ausente. Restaure seu backup privado antes de iniciar; nao gere novas senhas sobre volumes existentes.'
+}
+$pasta = Join-Path $HOME 'Documents\UBS-Backup\migracao-n8n'
+$composeN8n = Join-Path $pasta 'compose.yaml'
+if (-not (Test-Path $composeN8n)) {
+    throw "Compose do novo n8n ausente em $composeN8n. Consulte docs/MIGRACAO_N8N.md; nao reative o n8n antigo."
+}
+if (-not (Test-Path (Join-Path $pasta '.env'))) {
+    throw 'Chave nova ausente na pasta privada de migracao. Restaure o .env novo de seu backup; nao substitua a chave por outra.'
+}
+Write-Host 'Iniciando banco e FastAPI, sem o n8n legado...'
+docker compose up -d --build db api
+if ($LASTEXITCODE -ne 0) { throw 'Falha ao iniciar db/api' }
+Write-Host 'Iniciando n8n migrado no Compose privado...'
+docker compose -f $composeN8n up -d
+if ($LASTEXITCODE -ne 0) { throw 'Falha ao iniciar n8n migrado' }
+Write-Host 'Iniciando proxy Nginx...'
+docker compose up -d web
+if ($LASTEXITCODE -ne 0) { throw 'Falha ao iniciar Nginx' }
+docker compose ps
+if ($LASTEXITCODE -ne 0) { throw 'Falha ao conferir o Compose' }
+Write-Host 'Concluido: http://localhost:8080 (chat) e http://localhost:5679 (n8n novo).'
+Write-Host 'Execute python scripts/validar_execucao.py para teste de ponta a ponta.'
