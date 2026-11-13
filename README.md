@@ -208,3 +208,11 @@ Essa evidência não comprova ausência de outras vulnerabilidades nem vigência
 ---
 
 **Natureza do projeto:** protótipo técnico em fase de testes. Nenhum conteúdo deve ser interpretado como orientação médica ou comunicação oficial do município.
+
+
+### Guia para manutenção e integrações
+
+Para localizar responsabilidades, estender a coleta, a busca ou os endpoints sem
+quebrar contratos existentes, consulte [docs/GUIA_MANUTENCAO.md](docs/GUIA_MANUTENCAO.md).
+As regras de intenção/evidência ficam em `api/app/query_policy.py`; a extração
+HTML e o particionamento ficam em `api/app/text_processing.py`.
