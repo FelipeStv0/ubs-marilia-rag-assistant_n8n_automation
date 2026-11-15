@@ -1,5 +1,8 @@
 # Assistente de Atendimento — UBS e USF de Marília/SP
 
+**Idiomas:** [Português](README.md) | [English](README_EN.md)
+
+
 ![CI](https://github.com/FelipeStv0/ubs-marilia-rag-assistant_n8n_automation/actions/workflows/ci.yml/badge.svg)
 
 Plataforma experimental de consulta a **informações administrativas** sobre Unidades Básicas de Saúde (UBS) e Unidades de Saúde da Família (USF) de Marília, SP. Automatiza a coleta programada de páginas oficiais, registra revisões e oferece consultas com referências verificáveis.
